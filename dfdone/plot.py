@@ -1,10 +1,8 @@
-#! /usr/bin/python3
-
 from collections import defaultdict as ddict
-from graphviz    import Digraph
-from re          import finditer
-from components  import Datum, Element, Interaction
-from enums       import Profile, Role, Risk
+from graphviz import Digraph
+from re import finditer
+from components import Datum, Element, Interaction
+from enums import Profile, Role, Risk
 
 
 # TODO figure out how to determine whether threats have been
@@ -23,7 +21,8 @@ def plot(_locals, assumptions):
     for e in elements:
         for interaction in e.interactions:
             interactions.append(interaction)
-            dot.edge(e.label, interaction.target.label, label='({})'.format(interaction.index + 1), constraint=interaction.adjacent)
+            dot.edge(e.label, interaction.target.label, label='({})'.format(interaction.index + 1),
+                     constraint=interaction.adjacent)
         if e.group:
             groups[e.group].append(e)
             continue
@@ -43,7 +42,8 @@ def plot(_locals, assumptions):
     # Create the interaction table node.
     dot.node(
         'interaction_table',
-        '<<table border="0" cellborder="1" cellspacing="0">{}</table>>'.format('\n'.join(build_interaction_table(interactions))),
+        '<<table border="0" cellborder="1" cellspacing="0">{}</table>>'.format(
+            '\n'.join(build_interaction_table(interactions))),
         shape='plaintext'
     )
     # Place it at the bottom by creating an edge to it from the bottom-most element.
@@ -52,30 +52,32 @@ def plot(_locals, assumptions):
     # TODO make this create the file in the appropriate place.
     dot.render(format='png', view=True)
 
+
 def add_node(graph, element):
-        shape = 'box'
-        if element.role == Role.SERVICE:
-            shape = 'oval'
-        if element.role == Role.STORAGE:
-            shape = 'box3d'
+    shape = 'box'
+    if element.role == Role.SERVICE:
+        shape = 'oval'
+    if element.role == Role.STORAGE:
+        shape = 'box3d'
 
-        fillcolor = 'white'
-        fontcolor = 'black'
-        if element.profile == Profile.BLACK:
-            fillcolor = 'black'
-            fontcolor = 'white'
-        if element.profile == Profile.GREY:
-            fillcolor = 'grey'
+    fillcolor = 'white'
+    fontcolor = 'black'
+    if element.profile == Profile.BLACK:
+        fillcolor = 'black'
+        fontcolor = 'white'
+    if element.profile == Profile.GREY:
+        fillcolor = 'grey'
 
-        graph.node(
-            element.label,
-            label=element.label,
-            shape=shape,
-            style='filled',
-            color=fontcolor,
-            fontcolor=fontcolor,
-            fillcolor=fillcolor
-        )
+    graph.node(
+        element.label,
+        label=element.label,
+        shape=shape,
+        style='filled',
+        color=fontcolor,
+        fontcolor=fontcolor,
+        fillcolor=fillcolor
+    )
+
 
 # TODO figure out a nice way to include threat descriptions, not just labels.
 # TODO figure out a nice way to include interaction notes.
@@ -110,7 +112,8 @@ def build_interaction_table(interactions):
             for ti, threat in enumerate(threats):
                 if ti > 0:
                     interaction_table.append('<tr>')
-                interaction_table.append('<td bgcolor="{}">{}</td></tr>'.format(get_risk_color(threat.risk), threat.label))
+                interaction_table.append(
+                    '<td bgcolor="{}">{}</td></tr>'.format(get_risk_color(threat.risk), threat.label))
 
         if remaining_rowspan > 0:
             interaction_table.append('<tr><td rowspan="{}">entire interaction</td>'.format(remaining_rowspan))
@@ -122,6 +125,7 @@ def build_interaction_table(interactions):
 
     return interaction_table
 
+
 def get_risk_color(risk):
     bgcolor = 'tomato'
     if risk <= Risk.MEDIUM:
@@ -129,6 +133,7 @@ def get_risk_color(risk):
     if risk <= Risk.LOW:
         bgcolor = 'khaki'
     return bgcolor
+
 
 def bottom_node_label(svg_graph, element_labels):
     y = -1e10
@@ -142,4 +147,3 @@ def bottom_node_label(svg_graph, element_labels):
             y = new_y
             label = new_label
     return label
-

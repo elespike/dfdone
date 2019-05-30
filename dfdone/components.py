@@ -1,12 +1,11 @@
-#! /usr/bin/python3
-
 from collections import defaultdict as ddict, namedtuple
-from enums       import *
+from .enums import Classification, Role, Profile, \
+    Risk, Action, Impact, Probability
 
 
 class Component:
     def __init__(self, label, description=''):
-        self.label       = label
+        self.label = label
         self.description = description
 
     def __repr__(self):
@@ -18,7 +17,6 @@ class Component:
         return self.label
 
 
-
 class Datum(Component):
     def __init__(self, label, description='', classification=Classification.CONFIDENTIAL):
         super().__init__(label, description)
@@ -26,18 +24,18 @@ class Datum(Component):
 
 
 class Interaction:
-    def __init__(self, index, action, target, data_threats, generic_threats=list(), notes='', adjacent=False):
-        self.index  = index
+    def __init__(self, index, action, target, data_threats, generic_threats=None, notes='', adjacent=False):
+        self.index = index
         self.action = action
         self.target = target
 
         if type(data_threats) == Datum:
             data_threats = [data_threats]
         if type(data_threats) == list:
-            data_threats = {k:[] for k in data_threats}
+            data_threats = {k: [] for k in data_threats}
         self.data_threats = data_threats
 
-        self.generic_threats = generic_threats
+        self.generic_threats = [] if generic_threats is None else generic_threats
 
         # Include all threat sub-categories.
         for datum, threats in data_threats.items():
@@ -57,7 +55,7 @@ class Interaction:
 
         # Using 'not adjacent' because the 'constraint' graphviz attribute is the opposite;
         # i.e., it DOES calculate a new "rank" when set to 'true'.
-        self.adjacent = str(not adjacent) # graphviz attributes are all strings.
+        self.adjacent = str(not adjacent)  # graphviz attributes are all strings.
 
 
 class Element(Component):
@@ -67,9 +65,9 @@ class Element(Component):
     def __init__(self, label, description='', role=Role.AGENT, profile=Profile.BLACK, group=''):
         super().__init__(label, description)
 
-        self.role    = role
+        self.role = role
         self.profile = profile
-        self.group   = group
+        self.group = group
 
         self.interactions = list()
 
@@ -95,14 +93,16 @@ class Element(Component):
 
 
 class Threat(Component):
-    def __init__(self, label, description='', impact=Impact.HIGH, probability=Probability.HIGH, recommendations=[], tests=[]):
+    def __init__(self, label, description='', impact=Impact.HIGH, probability=Probability.HIGH, recommendations=None,
+                 tests=None):
         super().__init__(label, description)
-        self.impact      = impact
+        self.impact = impact
         self.probability = probability
 
         # TODO these two could be their own classes with their own collections/libraries.
-        self.recommendations = recommendations
-        self.tests           = tests
+
+        self.recommendations = [] if recommendations is None else recommendations
+        self.tests = [] if tests is None else tests
 
         # The risk attribute is updated when an Interaction is created.
         self.risk = 9001
@@ -118,4 +118,3 @@ class Threat(Component):
             return Risk.MEDIUM.value
         else:
             return Risk.HIGH.value
-
