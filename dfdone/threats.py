@@ -1,5 +1,5 @@
-from components import Threat
-from enums import Impact, Probability
+from .components import Threat
+from .enums import Impact, Probability
 
 data_input = Threat('Every data input threat')
 data_input.arbitrary = Threat('Input may be arbitrary, corrupt, empty, or missing')

@@ -1,8 +1,10 @@
+import re
+
 from collections import defaultdict as ddict
 from graphviz import Digraph
-from re import finditer
-from components import Datum, Element, Interaction
-from enums import Profile, Role, Risk
+
+from .components import Datum, Element, Interaction
+from .enums import Profile, Role, Risk
 
 
 # TODO figure out how to determine whether threats have been
@@ -54,19 +56,18 @@ def plot(_locals, assumptions):
 
 
 def add_node(graph, element):
-    shape = 'box'
-    if element.role == Role.SERVICE:
-        shape = 'oval'
-    if element.role == Role.STORAGE:
-        shape = 'box3d'
 
-    fillcolor = 'white'
-    fontcolor = 'black'
-    if element.profile == Profile.BLACK:
-        fillcolor = 'black'
-        fontcolor = 'white'
-    if element.profile == Profile.GREY:
-        fillcolor = 'grey'
+    # Role defines shape of node
+    shape = {
+        Role.SERVICE: 'oval',
+        Role.STORAGE: 'box3d'
+    }.get(element.role, 'box')
+
+    # set proper background + text contrast
+    fillcolor, fontcolor = {
+        Profile.BLACK: ('black', 'white'),
+        Profile.GREY: ('grey', 'black')
+    }.get(element.profile, ('white', 'black'))
 
     graph.node(
         element.label,
@@ -127,19 +128,21 @@ def build_interaction_table(interactions):
 
 
 def get_risk_color(risk):
-    bgcolor = 'tomato'
     if risk <= Risk.MEDIUM:
-        bgcolor = 'sandybrown'
+        return 'sandybrown'
     if risk <= Risk.LOW:
-        bgcolor = 'khaki'
-    return bgcolor
+        return 'khaki'
+    return 'tomato'
 
 
 def bottom_node_label(svg_graph, element_labels):
+    # use re.compile to clearly explain what the regex is for
+    y_axis_label = re.compile(r'<text .+ y="(.+?)".+>(.+)</text>')
+
     y = -1e10
     label = 'fix me!'
     svg_source = svg_graph.pipe().decode()
-    for m in finditer(r'<text .+ y="(.+?)".+>(.+)</text>', svg_source):
+    for m in re.finditer(y_axis_label, svg_source):
         new_y = float(m.group(1))
         new_label = m.group(2)
         # Depends on rankdir='TB'

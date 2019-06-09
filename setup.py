@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='dfdone',
     version='0.0.1',
-    packages=[''],
+    packages=['dfdone'],
     url='https://github.com/auth0/dfdone',
     license='',
     author='Auth0',
@@ -13,4 +13,9 @@ setup(
         'graphviz'
     ],
     python_requires='>=3.6',
+    entry_points={
+        'console_scripts': [
+            'dfdone = dfdone.__main__:main'
+        ]
+    }
 )
