@@ -136,7 +136,7 @@ def get_risk_color(risk):
 
 
 def bottom_node_label(svg_graph, element_labels):
-    # use re.compile to clearly explain what the regex is for
+    # Find the y coordinate of a node in the diagram, along with its label
     y_axis_label = re.compile(r'<text .+ y="(.+?)".+>(.+)</text>')
 
     y = -1e10
