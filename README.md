@@ -3,7 +3,7 @@ Python framework to generate threat models from code.
 
 Requirements:
 - Python 3
-- Graphviz (`pip3 install graphviz`)
+- Graphviz: both the program (`apt install graphviz`) as well as the Python package (`pip3 install graphviz`)
 - Or use a virtualenv and run `pip install`
 
 To run:
