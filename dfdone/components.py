@@ -41,7 +41,7 @@ class Interaction:
         for datum, threats in data_threats.items():
             for threat in threats:
                 self.data_threats[datum].extend(threat.children())
-        for threat in generic_threats:
+        for threat in list(self.generic_threats):
             self.generic_threats.extend(threat.children())
 
         # Assign and sort by risk.
@@ -49,7 +49,7 @@ class Interaction:
             for threat in threats:
                 threat.risk = threat.risk_value(datum.classification)
             self.data_threats[datum].sort(key=lambda t: t.risk, reverse=True)
-        for threat in generic_threats:
+        for threat in list(self.generic_threats):
             threat.risk = threat.risk_value()
         self.generic_threats.sort(key=lambda t: t.risk, reverse=True)
 

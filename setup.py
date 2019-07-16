@@ -16,7 +16,7 @@ setup(
     python_requires='>=3.6',
     entry_points={
         'console_scripts': [
-            'dfdone = dfdone.cli.plot:main'
+            'dfdone = dfdone.cli.main:main'
         ]
     }
 )
