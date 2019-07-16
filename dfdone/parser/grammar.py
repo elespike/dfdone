@@ -45,6 +45,9 @@ EFFECT = LABEL + ZeroOrMore(RISKING + THREAT_LIST)
 EFFECT_LIST = delimitedList(Group(EFFECT), ';').setResultsName('effect_list')
 
 def test_grammar(construct, construct_tests):
+    # TODO the development version of pyparsing offers
+    # a "file" kwarg where to write testing output.
+    # Once released, let's use it.
     for r in construct.runTests(construct_tests)[1]:
         if isinstance(r[-1], ParseException):
             exit(1)

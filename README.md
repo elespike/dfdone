@@ -1,18 +1,14 @@
 # dfdone
-Python framework to generate threat models from code.
+Python framework to generate threat models from natural language.
 
 Requirements:
-- Python 3
-- Graphviz: both the program (`apt install graphviz`) as well as the Python package (`pip3 install graphviz`)
-- Or use a virtualenv and run `pip install`
+- A Python 3.6 (or later) virtual environment for running `pip install`
+- Graphviz (`apt install graphviz`)
 
-To run:
-`python3 models/your_project/your_project.py`
-
-**To run CLI:**
+**Running**
 
 - Create a virtualenv
     - `$ virtualenv venv` (or `virtualenv {path_to_directory_for_virtualenv}`)
     - `$ source /{path-to-virtualenv-you-created}/bin/activate`
-- `$ pip install -e .`
-- `$ dfdone`
+- `$ pip install -e .` (note the trailing `.`)
+- `$ dfdone {path-to-model-file}`
