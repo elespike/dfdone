@@ -12,9 +12,7 @@ from .enums import Profile, Role, Risk
 
 # TODO include a link to mitigations/acceptances in the TM artifact.
 
-def plot(_locals, assumptions):
-    elements = sorted([l for l in _locals.values() if isinstance(l, Element)], key=lambda e: e.index)
-
+def plot(elements):
     dot = Digraph(format='svg')
     dot.attr(rankdir='TB')
 
@@ -29,8 +27,9 @@ def plot(_locals, assumptions):
             groups[e.group].append(e)
             continue
         add_node(dot, e)
-    # TODO is there a better way to include assumptions?
-    interactions.append(Interaction(len(interactions), None, None, {Datum('Assumptions'): [assumptions]}))
+    # TODO figure out how to best include negative assumptions
+    # after hooking up the DISPROVE grammatical construct.
+    # interactions.append(Interaction(len(interactions), None, None, {Datum('Assumptions'): [assumptions]}))
 
     if groups:
         for group, group_elements in groups.items():
@@ -56,7 +55,6 @@ def plot(_locals, assumptions):
 
 
 def add_node(graph, element):
-
     # Role defines shape of node
     shape = {
         Role.SERVICE: 'oval',

@@ -27,7 +27,7 @@ class Profile(Enum):
 
 class Action(Enum):
     PROCESS = 'process'
-    # RECEIVE = 'receive'
+    RECEIVE = 'receive'
     SEND = 'send'
     STORE = 'store'
 

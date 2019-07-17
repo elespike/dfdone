@@ -1,6 +1,13 @@
 from itertools import product
 
 
+# Tests must be added to this list in the same order
+# as dfdone.parser.grammar.constructs.
+all_tests = list()
+
+disprove_tests = ['disprove "No transport security!"', 'disprove "bad1", "bad2", "bad3"']
+all_tests.append(disprove_tests)
+
 element_components = [
     # Label
     ['"the ""awesomator"""'],
@@ -18,6 +25,7 @@ element_components = [
     ['described as "automatically makes things awesome"']
 ]
 element_tests = [' '.join(p) for p in product(*element_components)]
+all_tests.append(element_tests)
 
 datum_components = [
     # Label
@@ -34,6 +42,7 @@ datum_components = [
     ['described as "one\'s ""true"" identity"']
 ]
 datum_tests = [' '.join(p) for p in product(*datum_components)]
+all_tests.append(datum_tests)
 
 threat_components = [
     # Label
@@ -52,8 +61,7 @@ threat_components = [
     ['described as "you ""probably"" suffer from it"']
 ]
 threat_tests = [' '.join(p) for p in product(*threat_components)]
-
-copy_tests = ['copy threat "Cross-site ""sKr1p71n9""" as "XSS"']
+all_tests.append(threat_tests)
 
 label_list_components = [
     # Label
@@ -66,8 +74,7 @@ label_list_components = [
     ['"XSS", "CSRF", "SSRF", "APT (""KGB"")"']
 ]
 label_list_tests = [' '.join(p) for p in product(*label_list_components)]
-
-disprove_tests = ['disprove "No transport security!"', 'disprove "bad1", "bad2", "bad3"']
+all_tests.append(label_list_tests)
 
 interaction_components = [
     ['"Element ""One"""'],
@@ -82,4 +89,5 @@ interaction_components = [
     ['risking """KGB""", "other APTs"']
 ]
 interaction_tests = [' '.join(p) for p in product(*interaction_components)]
+all_tests.append(interaction_tests)
 
