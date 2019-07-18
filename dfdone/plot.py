@@ -126,10 +126,10 @@ def build_interaction_table(interactions):
 
 
 def get_risk_color(risk):
-    if risk <= Risk.MEDIUM:
-        return 'sandybrown'
     if risk <= Risk.LOW:
         return 'khaki'
+    if risk <= Risk.MEDIUM:
+        return 'sandybrown'
     return 'tomato'
 
 

@@ -32,10 +32,10 @@ def build_components(parse_results):
                     break
             elements[r.label] = Element(
                 r.label,
-                r.description,
-                r.role,
                 r.profile,
-                r.group
+                r.role,
+                r.group,
+                r.description
             )
 
         if r.classification:
@@ -45,8 +45,8 @@ def build_components(parse_results):
                     break
             data[r.label] = Datum(
                 r.label,
-                r.description,
-                r.classification
+                r.classification,
+                r.description
             )
 
         if r.impact:
@@ -60,9 +60,9 @@ def build_components(parse_results):
                     break
             threats[r.label] = Threat(
                 r.label,
-                r.description,
                 r.impact,
-                r.probability
+                r.probability,
+                r.description
             )
 
         # TODO parse negative assumptions (DISPROVE)
@@ -91,12 +91,12 @@ def build_components(parse_results):
                 elif t.label in threat_bundles:
                     generic_threats.extend(threat_bundles[t.label])
             if r.action == Action.PROCESS:
-                elements[r.subject].processes(data_threats, generic_threats=generic_threats)
+                elements[r.subject].processes(data_threats, generic_threats)
             if r.action == Action.RECEIVE:
-                elements[r.subject].receives(elements[r.object], data_threats, generic_threats=generic_threats)
+                elements[r.subject].receives(elements[r.object], data_threats, generic_threats)
             if r.action == Action.SEND:
-                elements[r.subject].sends(elements[r.object], data_threats, generic_threats=generic_threats)
+                elements[r.subject].sends(elements[r.object], data_threats, generic_threats)
             if r.action == Action.STORE:
-                elements[r.subject].stores(data_threats, generic_threats=generic_threats)
+                elements[r.subject].stores(data_threats, generic_threats)
     plot(elements.values())
 

@@ -19,7 +19,7 @@ from dfdone.parser import grammar_tests
 
 # Creating a named group exposes the match as an attribute.
 ACTION          = Regex('(?P<action>process|receive|send|store)[es]?s?'                  , IGNORECASE)
-BROADLY_RISKING = Regex('([,;] )?broadly risking'                                        , IGNORECASE)
+BROADLY_RISKING = Regex('([,;] )?(broadly|generally) risking'                            , IGNORECASE)
 CLASSIFICATION  = Regex('(?P<classification>confidential|public|restricted)'             , IGNORECASE)
 DATUM           = Regex('dat[ua]m?'                                                      , IGNORECASE)
 IMPACT          = Regex('(?P<impact>high|medium|low) (impact|severity),?'                , IGNORECASE)
@@ -30,12 +30,11 @@ RISKING         = Regex('(, )?risking'                                          
 ROLE            = Regex('(?P<role>agent|service|storage)'                                , IGNORECASE)
 TO_FROM         = Regex('(, )?(to|from)'                                                 , IGNORECASE)
 
-AS        = CaselessKeyword('as'       )
-COPY      = CaselessKeyword('copy'     )
-DESCRIBED = CaselessKeyword('described')
-DISPROVE  = CaselessKeyword('disprove' )
-IN        = CaselessKeyword('in'       )
-THREAT    = CaselessKeyword('threat'   )
+COPY         = CaselessKeyword('copy'        )
+DESCRIBED_AS = CaselessKeyword('described as')
+DISPROVE     = CaselessKeyword('disprove'    )
+IN           = CaselessKeyword('in'          )
+THREAT       = CaselessKeyword('threat'      )
 
 DESCRIPTION   = QuotedString('"', escQuote='""').setResultsName('description'  )
 GROUP         = QuotedString('"', escQuote='""').setResultsName('group'        )
@@ -60,10 +59,7 @@ def test_grammar(construct, construct_tests):
 
 # TODO:
 # - threat library import
-# - threat notes
-# - threat children
-# - copy threats?
-# - replace threat attributes?
+# - interaction notes and adjacency
 
 # Constructs must be added to this list in the same order
 # as dfdone.parser.grammar_tests.all_tests.
@@ -73,11 +69,11 @@ constructs = [
     # Negative assumptions which have not been disproven should incur risk.
     DISPROVE + LABEL_LIST,
     # Element
-    LABEL + IS_A + PROFILE + ROLE + Optional(IN + GROUP) + Optional(DESCRIBED + AS + DESCRIPTION),
+    LABEL + IS_A + PROFILE + ROLE + Optional(IN + GROUP) + Optional(DESCRIBED_AS + DESCRIPTION),
     # Datum
-    LABEL + IS_A + CLASSIFICATION + DATUM + Optional(DESCRIBED + AS + DESCRIPTION),
+    LABEL + IS_A + CLASSIFICATION + DATUM + Optional(DESCRIBED_AS + DESCRIPTION),
     # Threat
-    LABEL + IS_A + IMPACT + PROBABILITY + THREAT + Optional(DESCRIBED + AS + DESCRIPTION),
+    LABEL + IS_A + IMPACT + PROBABILITY + THREAT + Optional(DESCRIBED_AS + DESCRIPTION),
     # Label list
     LABEL + IS_A + LABEL_LIST,
     # Interaction
