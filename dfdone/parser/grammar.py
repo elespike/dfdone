@@ -4,6 +4,7 @@ from sys import exit as sys_exit
 from pyparsing import (
     CaselessKeyword,
     Group          ,
+    Literal        ,
     OneOrMore      ,
     Optional       ,
     Or             ,
@@ -11,7 +12,8 @@ from pyparsing import (
     QuotedString   ,
     Regex          ,
     ZeroOrMore     ,
-    delimitedList
+    delimitedList  ,
+    lineStart
 )
 
 from dfdone.parser import grammar_tests
@@ -23,7 +25,8 @@ BROADLY_RISKING = Regex('([,;] )?(broadly|generally) risking'                   
 CLASSIFICATION  = Regex('(?P<classification>confidential|public|restricted)'             , IGNORECASE)
 DATUM           = Regex('dat[ua]m?'                                                      , IGNORECASE)
 IMPACT          = Regex('(?P<impact>high|medium|low) (impact|severity),?'                , IGNORECASE)
-IS_A            = Regex('(is|are)( (an?|the))?'                                          , IGNORECASE)
+IS_A            = Regex('(is|are) ?(an?|the)?'                                           , IGNORECASE)
+IS_NOW_A        = Regex('(is|are) (?P<modify>now) ?(an?|the)?'                           , IGNORECASE)
 PROBABILITY     = Regex('(, )?(?P<probability>high|medium|low) (probability|likelihood)' , IGNORECASE)
 PROFILE         = Regex('(?P<profile>white|gr[ae]y|black)[- ]box'                        , IGNORECASE)
 RISKING         = Regex('(, )?risking'                                                   , IGNORECASE)
@@ -43,6 +46,7 @@ OBJECT        = QuotedString('"', escQuote='""').setResultsName('object'       )
 SOURCE_THREAT = QuotedString('"', escQuote='""').setResultsName('source_threat')
 SUBJECT       = QuotedString('"', escQuote='""').setResultsName('subject'      )
 
+ASSUMPTIONS = delimitedList(Group(LABEL) , ',').setResultsName('assumptions')
 LABEL_LIST  = delimitedList(Group(LABEL) , ',').setResultsName('label_list' )
 THREAT_LIST = delimitedList(Group(LABEL) , ',').setResultsName('threat_list')
 EFFECT = LABEL + ZeroOrMore(RISKING + THREAT_LIST)
@@ -67,19 +71,27 @@ constructs = [
     # These are negative assumptions; i.e, anti-patterns which must be disproven.
     # E.g., disprove "lack of transport security".
     # Negative assumptions which have not been disproven should incur risk.
-    DISPROVE + LABEL_LIST,
+    DISPROVE + ASSUMPTIONS,
     # Element
     LABEL + IS_A + PROFILE + ROLE + Optional(IN + GROUP) + Optional(DESCRIBED_AS + DESCRIPTION),
     # Datum
     LABEL + IS_A + CLASSIFICATION + DATUM + Optional(DESCRIBED_AS + DESCRIPTION),
     # Threat
     LABEL + IS_A + IMPACT + PROBABILITY + THREAT + Optional(DESCRIBED_AS + DESCRIPTION),
-    # Label list
+    # Label list or alias
     LABEL + IS_A + LABEL_LIST,
+    # Component modification
+    LABEL + IS_NOW_A
+        + Optional(PROFILE) + Optional(ROLE) + Optional(IN + GROUP)
+        + Optional(CLASSIFICATION) + Optional(DATUM)
+        + Optional(IMPACT) + Optional(PROBABILITY) + Optional(THREAT)
+        + Optional(DESCRIBED_AS + DESCRIPTION),
     # Interaction
     SUBJECT + ACTION + EFFECT_LIST + Optional(TO_FROM + OBJECT) + Optional(BROADLY_RISKING + THREAT_LIST)
 ]
-# TODO for constructs above: include StringStart/StringEnd, optional period?
+# This allows commenting out lines in the threat model file.
+for i, c in enumerate(list(constructs)):
+    constructs[i] = lineStart + c + Optional(Literal('.'))  # doesn't work with lineEnd, dunno why.
 
 if __name__ == '__main__':
     for c, t in zip(constructs, grammar_tests.all_tests):

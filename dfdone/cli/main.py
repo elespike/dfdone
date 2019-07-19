@@ -14,7 +14,18 @@ from dfdone.parser import parser
 @click.command()
 @click.argument('model')
 def main(model):
+
+    results = None
     if isfile(model):
         results = parser.parse_file(model)
+    # TODO else print error and exit.
+
+    elements = None
+    if results is not None:
+        elements = parser.build_components(results)
+    # TODO else print error and exit.
+
+    if elements is not None:
+        plot(elements)
     # TODO else print error and exit.
 

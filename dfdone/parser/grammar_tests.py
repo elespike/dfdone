@@ -52,9 +52,11 @@ threat_components = [
     # Articles
     ['a', 'an', 'the'],
     # Impact
-    ['high impact', 'medium impact', 'low impact'],
+    ['high', 'medium', 'low'],
+    ['impact', 'severity'],
     # Probability
-    ['high probability', 'medium probability', 'low probability'],
+    ['high', 'medium', 'low'],
+    ['probability', 'likelihood'],
     # Literal 'threat'
     ['threat'],
     # Description
@@ -76,6 +78,39 @@ label_list_components = [
 label_list_tests = [' '.join(p) for p in product(*label_list_components)]
 all_tests.append(label_list_tests)
 
+# No need to re-test every single variation.
+# Let's just make sure they work together.
+modification_components = [
+    # Label
+    ['"""Standard"" threats"'],
+    # Verbs
+    ['is', 'are'],
+    # Literal 'now'
+    ['now'],
+    # Articles
+    ['a', 'an', 'the'],
+    # Profiles
+    ['white box'],
+    # Roles
+    ['agent'],
+    # Group
+    ['in "the ""awesome"" group"'],
+    # Classification
+    ['public'],
+    # Literals 'datum' or 'data'
+    ['datum', 'data'],
+    # Impact
+    ['high impact'],
+    # Probability
+    ['high probability'],
+    # Literal 'threat'
+    ['threat'],
+    # Description
+    ['described as "you ""probably"" suffer from it"']
+]
+modification_tests = [' '.join(p) for p in product(*modification_components)]
+all_tests.append(modification_tests)
+
 interaction_components = [
     ['"Element ""One"""'],
     ['sends', 'receives', 'stores'],
@@ -86,6 +121,7 @@ interaction_components = [
     # Source or destination
     ['"Element ""Two"""'],
     # Threat list
+    ['broadly', 'generally'],
     ['risking """KGB""", "other APTs"']
 ]
 interaction_tests = [' '.join(p) for p in product(*interaction_components)]

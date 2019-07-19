@@ -45,8 +45,7 @@ class Interaction:
                 threat.risk = threat.risk_value(datum.classification)
             self.data_threats[datum].sort(key=lambda t: t.risk, reverse=True)
         for threat in list(self.generic_threats):
-            # threat.risk = threat.risk_value(sum(classification_list) / len(classification_list))
-            threat.risk = threat.risk_value(Classification.PUBLIC)
+            threat.risk = threat.risk_value(sum(classification_list) / len(classification_list))
         self.generic_threats.sort(key=lambda t: t.risk, reverse=True)
 
         # Using 'not adjacent' because the 'constraint' graphviz attribute is the opposite;
@@ -114,8 +113,7 @@ class Threat(Component):
         r = self.impact * self.probability * classification
         if r <= Risk.LOW:
             return Risk.LOW
-        elif r <= Risk.MEDIUM:
+        if r <= Risk.MEDIUM:
             return Risk.MEDIUM
-        else:
-            return Risk.HIGH
+        return Risk.HIGH
 
