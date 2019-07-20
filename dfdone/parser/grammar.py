@@ -33,7 +33,7 @@ RISKING         = Regex('(, )?risking'                                          
 ROLE            = Regex('(?P<role>agent|service|storage)'                                , IGNORECASE)
 TO_FROM         = Regex('(, )?(to|from)'                                                 , IGNORECASE)
 
-COPY         = CaselessKeyword('copy'        )
+CALLED       = CaselessKeyword('called'      )
 DESCRIBED_AS = CaselessKeyword('described as')
 DISPROVE     = CaselessKeyword('disprove'    )
 IN           = CaselessKeyword('in'          )
@@ -42,6 +42,7 @@ THREAT       = CaselessKeyword('threat'      )
 DESCRIPTION   = QuotedString('"', escQuote='""').setResultsName('description'  )
 GROUP         = QuotedString('"', escQuote='""').setResultsName('group'        )
 LABEL         = QuotedString('"', escQuote='""').setResultsName('label'        )
+NEW_NAME      = QuotedString('"', escQuote='""').setResultsName('new_name'     )
 OBJECT        = QuotedString('"', escQuote='""').setResultsName('object'       )
 SOURCE_THREAT = QuotedString('"', escQuote='""').setResultsName('source_threat')
 SUBJECT       = QuotedString('"', escQuote='""').setResultsName('subject'      )
@@ -85,6 +86,7 @@ constructs = [
         + Optional(PROFILE) + Optional(ROLE) + Optional(IN + GROUP)
         + Optional(CLASSIFICATION) + Optional(DATUM)
         + Optional(IMPACT) + Optional(PROBABILITY) + Optional(THREAT)
+        + Optional(CALLED + NEW_NAME)
         + Optional(DESCRIBED_AS + DESCRIPTION),
     # Interaction
     SUBJECT + ACTION + EFFECT_LIST + Optional(TO_FROM + OBJECT) + Optional(BROADLY_RISKING + THREAT_LIST)

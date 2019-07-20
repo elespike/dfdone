@@ -105,6 +105,8 @@ modification_components = [
     ['high probability'],
     # Literal 'threat'
     ['threat'],
+    # New name
+    ['called "not feeling ""creative"" at the moment"'],
     # Description
     ['described as "you ""probably"" suffer from it"']
 ]
