@@ -41,12 +41,14 @@ class Interaction:
         classification_list = list()
         for datum, threats in data_threats.items():
             classification_list.append(datum.classification)
-            for threat in threats:
-                threat.risk = threat.risk_value(datum.classification)
-            self.data_threats[datum].sort(key=lambda t: t.risk, reverse=True)
-        for threat in list(self.generic_threats):
-            threat.risk = threat.risk_value(sum(classification_list) / len(classification_list))
-        self.generic_threats.sort(key=lambda t: t.risk, reverse=True)
+            self.data_threats[datum].sort(
+                key=lambda t: t.calculate_risk(datum.classification),
+                reverse=True
+            )
+        self.generic_threats.sort(
+            key=lambda t: t.calculate_risk(sum(classification_list) / len(classification_list)),
+            reverse=True
+        )
 
         # Using 'not adjacent' because the 'constraint' graphviz attribute is the opposite;
         # i.e., it DOES calculate a new "rank" when set to 'true'.
@@ -99,17 +101,16 @@ class Element(Component):
 class Threat(Component):
     def __init__(self, label, impact, probability, description, recommendations=None, tests=None):
         super().__init__(label, description)
-        self.impact = impact
-        self.probability = probability
+
+        self.impact, self.probability = impact, probability
 
         # TODO these two could be their own classes with their own collections/libraries.
         self.recommendations = [] if recommendations is None else recommendations
         self.tests = [] if tests is None else tests
 
-        # The risk attribute is updated when an Interaction is created.
-        self.risk = 9001
-
-    def risk_value(self, classification):
+    # Defauting to Classification.RESTRICTED effectively means that
+    # only impact and probability will be significant in the calculation.
+    def calculate_risk(self, classification=Classification.RESTRICTED):
         r = self.impact * self.probability * classification
         if r <= Risk.LOW:
             return Risk.LOW

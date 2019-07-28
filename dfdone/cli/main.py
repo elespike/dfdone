@@ -2,7 +2,12 @@ from os.path import isfile
 
 import click
 
-from dfdone.plot import plot
+from dfdone.plot import (
+    build_assumption_table,
+    build_diagram         ,
+    build_interaction_table,
+    default_style
+)
 from dfdone.parser import parser
 
 
@@ -26,6 +31,14 @@ def main(model):
     # TODO else print error and exit.
 
     if elements is not None:
-        plot(elements)
+        html = ''
+
+        # TODO if specified by an arg
+        html += default_style
+
+        html += build_assumption_table(parser.assumptions)
+        html += build_diagram(elements)
+        html += build_interaction_table(elements)
+        print(html)
     # TODO else print error and exit.
 

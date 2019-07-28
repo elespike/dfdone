@@ -4,7 +4,7 @@ from collections import defaultdict as ddict
 from graphviz import Digraph
 
 from .components import Datum, Element, Interaction
-from .enums import Profile, Role, Risk
+from .enums import Profile, Role, Risk, Classification
 
 
 # TODO figure out how to determine whether threats have been
@@ -12,24 +12,79 @@ from .enums import Profile, Role, Risk
 
 # TODO include a link to mitigations/acceptances in the TM artifact.
 
-def plot(elements):
+
+default_style = '''
+<style>
+  table {
+    border-collapse: collapse;
+  }
+  table.assumption-table {
+  }
+  table.interaction-table {
+  }
+
+  td {
+    border: 1px solid black;
+  }
+
+  td.label {
+  }
+  td.assumption-label {
+  }
+  td.data-label {
+  }
+  td.threat-label {
+  }
+
+  td.row-number {
+  }
+  td.assumption-number {
+  }
+  td.interaction-number {
+  }
+
+  td.risk-low {
+    background: khaki;
+  }
+  td.risk-medium {
+    background: sandybrown;
+  }
+  td.risk-high {
+    background: tomato;
+  }
+
+  td.dash {
+  }
+  td.all-data {
+  }
+</style>
+'''
+
+def build_assumption_table(assumptions):
+    assumption_table = ['<thead>\n<th>#</th>\n<th>Disprove</th>\n</thead>\n<tbody>']
+    for i, assumption in enumerate(assumptions):
+        assumption_table.append('<tr>')
+        assumption_table.append('<td class="row-number assumption-number">{}</td>'.format(i + 1))
+        assumption_table.append('<td class="label assumption-label risk-{}">{}</td>'.format(
+            assumption.calculate_risk().name.lower(),
+            assumption.label
+        ))
+        assumption_table.append('</tr>')
+    return '<table class="assumption-table">\n{}\n</tbody>\n</table>'.format('\n'.join(assumption_table))
+
+def build_diagram(elements):
     dot = Digraph(format='svg')
     dot.attr(rankdir='TB')
 
     groups = ddict(list)
-    interactions = list()
     for e in elements:
         for interaction in e.interactions:
-            interactions.append(interaction)
             dot.edge(e.label, interaction.target.label, label='({})'.format(interaction.index + 1),
                      constraint=interaction.adjacent)
         if e.group:
             groups[e.group].append(e)
             continue
         add_node(dot, e)
-    # TODO figure out how to best include negative assumptions
-    # after hooking up the DISPROVE grammatical construct.
-    # interactions.append(Interaction(len(interactions), None, None, {Datum('Assumptions'): [assumptions]}))
 
     if groups:
         for group, group_elements in groups.items():
@@ -40,19 +95,8 @@ def plot(elements):
                 add_node(sub, e)
             dot.subgraph(sub)
 
-    # Create the interaction table node.
-    dot.node(
-        'interaction_table',
-        '<<table border="0" cellborder="1" cellspacing="0">{}</table>>'.format(
-            '\n'.join(build_interaction_table(interactions))),
-        shape='plaintext'
-    )
-    # Place it at the bottom by creating an edge to it from the bottom-most element.
-    dot.edge(bottom_node_label(dot, [e.label for e in elements]), 'interaction_table', style='invis')
-
-    # TODO make this create the file in the appropriate place.
-    dot.render(format='png', view=True)
-
+    # Return the SVG source:
+    return dot.pipe().decode('utf-8')
 
 def add_node(graph, element):
     # Role defines shape of node
@@ -77,11 +121,14 @@ def add_node(graph, element):
         fillcolor=fillcolor
     )
 
+def get_interactions(elements):
+    return [i for e in elements for i in e.interactions]
 
 # TODO figure out a nice way to include threat descriptions, not just labels.
 # TODO figure out a nice way to include interaction notes.
-def build_interaction_table(interactions):
-    interaction_table = ['<tr><td>#</td><td>Data</td><td>Threats</td></tr>']
+def build_interaction_table(elements):
+    interactions = get_interactions(elements)
+    interaction_table = ['<thead>\n<th>#</th>\n<th>Data</th>\n<th>Threats</th>\n<thead>\n<tbody>']
     for interaction in sorted(interactions, key=lambda i: i.index):
         interaction_table.append('<tr>')
 
@@ -93,59 +140,51 @@ def build_interaction_table(interactions):
         rowspan += len(interaction.generic_threats)
         all_threats.extend(interaction.generic_threats)
 
-        interaction_table.append('<td rowspan="{}">{}</td>'.format(rowspan, interaction.index + 1))
+        interaction_table.append(
+            '<td class="row-number interaction-number" rowspan="{}">{}</td>'.format(rowspan, interaction.index + 1)
+        )
 
         remaining_rowspan = rowspan
         di = 0
+        highest_classification = Classification.PUBLIC
         for datum, threats in interaction.data_threats.items():
+            if datum.classification > highest_classification:
+                highest_classification = datum.classification
             rowspan = 0
             rowspan += len(threats) if threats else 1
             remaining_rowspan -= rowspan
             if di > 0:
                 interaction_table.append('<tr>')
             di += 1
-            interaction_table.append('<td rowspan="{}">{}</td>'.format(rowspan, datum.label))
+            interaction_table.append(
+                '<td class="label data-label" rowspan="{}">{}</td>'.format(rowspan, datum.label)
+            )
 
             if not threats:
-                interaction_table.append('<td>-</td></tr>')
+                interaction_table.append('<td class="dash">-</td>')
+                interaction_table.append('</tr>')
             for ti, threat in enumerate(threats):
                 if ti > 0:
                     interaction_table.append('<tr>')
-                interaction_table.append(
-                    '<td bgcolor="{}">{}</td></tr>'.format(get_risk_color(threat.risk), threat.label))
+                interaction_table.append('<td class="label threat-label risk-{}">{}</td>'.format(
+                    threat.calculate_risk(datum.classification).name.lower(),
+                    threat.label
+                ))
+                interaction_table.append('</tr>')
 
         if remaining_rowspan > 0:
-            interaction_table.append('<tr><td rowspan="{}">entire interaction</td>'.format(remaining_rowspan))
+            interaction_table.append('<tr>')
+            interaction_table.append('<td class="all-data" rowspan="{}">all data</td>'.format(remaining_rowspan))
 
         for ti, threat in enumerate(interaction.generic_threats):
             if ti > 0:
                 interaction_table.append('<tr>')
-            interaction_table.append('<td bgcolor="{}">{}</td></tr>'.format(get_risk_color(threat.risk), threat.label))
+            interaction_table.append('<td class="label threat-label risk-{}">{}</td>'.format(
+                threat.calculate_risk(highest_classification).name.lower(),
+                threat.label
+            ))
+            interaction_table.append('</tr>')
 
-    return interaction_table
-
-
-def get_risk_color(risk):
-    if risk <= Risk.LOW:
-        return 'khaki'
-    if risk <= Risk.MEDIUM:
-        return 'sandybrown'
-    return 'tomato'
-
-
-def bottom_node_label(svg_graph, element_labels):
-    # Find the y coordinate of a node in the diagram, along with its label
-    y_axis_label = re.compile(r'<text .+ y="(.+?)".+>(.+)</text>')
-
-    y = -1e10
-    label = 'fix me!'
-    svg_source = svg_graph.pipe().decode()
-    for m in re.finditer(y_axis_label, svg_source):
-        new_y = float(m.group(1))
-        new_label = m.group(2)
-        # Depends on rankdir='TB'
-        if new_y > y and new_label in element_labels:
-            y = new_y
-            label = new_label
-    return label
+    table_wrapper = '<table class="interaction_table">\n{}\n</tbody>\n</table>'
+    return table_wrapper.format('\n'.join(interaction_table))
 

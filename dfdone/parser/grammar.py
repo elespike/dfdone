@@ -27,13 +27,13 @@ DATUM           = Regex('dat[ua]m?'                                             
 IMPACT          = Regex('(?P<impact>high|medium|low) (impact|severity),?'                , IGNORECASE)
 IS_A            = Regex('(is|are) ?(an?|the)?'                                           , IGNORECASE)
 IS_NOW_A        = Regex('(is|are) (?P<modify>now) ?(an?|the)?'                           , IGNORECASE)
+LABELED         = Regex('labell?ed'                                                      , IGNORECASE)
 PROBABILITY     = Regex('(, )?(?P<probability>high|medium|low) (probability|likelihood)' , IGNORECASE)
 PROFILE         = Regex('(?P<profile>white|gr[ae]y|black)[- ]box'                        , IGNORECASE)
 RISKING         = Regex('(, )?risking'                                                   , IGNORECASE)
 ROLE            = Regex('(?P<role>agent|service|storage)'                                , IGNORECASE)
-TO_FROM         = Regex('(, )?(to|from)'                                                 , IGNORECASE)
+TO_FROM         = Regex('([,;] )?(to|from)'                                              , IGNORECASE)
 
-CALLED       = CaselessKeyword('called'      )
 DESCRIBED_AS = CaselessKeyword('described as')
 DISPROVE     = CaselessKeyword('disprove'    )
 IN           = CaselessKeyword('in'          )
@@ -66,13 +66,11 @@ def test_grammar(construct, construct_tests):
 # - threat library import
 # - interaction notes and adjacency
 
-# Constructs must be added to this list in the same order
-# as dfdone.parser.grammar_tests.all_tests.
+# The ordering of this list matters!
+# Construct definitions (e.g., LABEL + IS_A) should come first.
+# Furthermore, the order of this list must match
+# the order of dfdone.parser.grammar_tests.all_tests.
 constructs = [
-    # These are negative assumptions; i.e, anti-patterns which must be disproven.
-    # E.g., disprove "lack of transport security".
-    # Negative assumptions which have not been disproven should incur risk.
-    DISPROVE + ASSUMPTIONS,
     # Element
     LABEL + IS_A + PROFILE + ROLE + Optional(IN + GROUP) + Optional(DESCRIBED_AS + DESCRIPTION),
     # Datum
@@ -86,8 +84,12 @@ constructs = [
         + Optional(PROFILE) + Optional(ROLE) + Optional(IN + GROUP)
         + Optional(CLASSIFICATION) + Optional(DATUM)
         + Optional(IMPACT) + Optional(PROBABILITY) + Optional(THREAT)
-        + Optional(CALLED + NEW_NAME)
+        + Optional(LABELED + NEW_NAME)
         + Optional(DESCRIBED_AS + DESCRIPTION),
+    # These are negative assumptions; i.e, anti-patterns which must be disproven.
+    # E.g., disprove "lack of transport security".
+    # Negative assumptions which have not been disproven should incur risk.
+    DISPROVE + ASSUMPTIONS,
     # Interaction
     SUBJECT + ACTION + EFFECT_LIST + Optional(TO_FROM + OBJECT) + Optional(BROADLY_RISKING + THREAT_LIST)
 ]

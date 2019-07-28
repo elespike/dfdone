@@ -15,6 +15,7 @@ def parse_file(fname):
             results.append(r[0])
     return results
 
+assumptions = list()
 components, component_groups = dict(), dict()
 
 def build_components(parsed_results):
@@ -33,7 +34,13 @@ def build_components(parsed_results):
 
         # TODO
         elif r.assumptions:
-            pass
+            global assumptions
+            for a in r.assumptions:
+                # print(a.label in components, a.label in component_groups)
+                if a.label in components:
+                    assumptions.append(components[a.label])
+                if a.label in component_groups:
+                    assumptions.extend(component_groups[a.label])
 
         elif r.label and r.label_list:
             component_groups[r.label] = list()
@@ -59,6 +66,7 @@ def build_components(parsed_results):
                     generic_threats.extend(component_groups[t.label])
             trigger_actions(r, data_threats, generic_threats)
 
+    # TODO better
     return [v for v in components.values() if isinstance(v, Element)]
 
 def get_role(role_name):

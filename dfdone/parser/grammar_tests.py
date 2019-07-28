@@ -5,9 +5,6 @@ from itertools import product
 # as dfdone.parser.grammar.constructs.
 all_tests = list()
 
-disprove_tests = ['disprove "No transport security!"', 'disprove "bad1", "bad2", "bad3"']
-all_tests.append(disprove_tests)
-
 element_components = [
     # Label
     ['"the ""awesomator"""'],
@@ -112,6 +109,9 @@ modification_components = [
 ]
 modification_tests = [' '.join(p) for p in product(*modification_components)]
 all_tests.append(modification_tests)
+
+disprove_tests = ['disprove "No transport security!"', 'disprove "bad1", "bad2", "bad3"']
+all_tests.append(disprove_tests)
 
 interaction_components = [
     ['"Element ""One"""'],

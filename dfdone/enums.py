@@ -51,3 +51,4 @@ class Risk(IntEnum):
     LOW = 4
     MEDIUM = 8
     HIGH = 27
+
