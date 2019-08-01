@@ -24,7 +24,7 @@ class Datum(Component):
 
 
 class Interaction:
-    def __init__(self, index, action, target, data_threats, generic_threats, notes, adjacent):
+    def __init__(self, index, action, target, data_threats, generic_threats, notes, laterally):
         self.index = index
         self.action = action
         self.target = target
@@ -50,9 +50,10 @@ class Interaction:
             reverse=True
         )
 
-        # Using 'not adjacent' because the 'constraint' graphviz attribute is the opposite;
+        self.notes = notes
+        # Using 'not laterally' because the 'constraint' graphviz attribute is the opposite;
         # i.e., it DOES calculate a new "rank" when set to 'true'.
-        self.adjacent = str(not adjacent)  # graphviz attributes are all strings.
+        self.laterally = str(not laterally)  # graphviz attributes are all strings.
 
 
 class Element(Component):
@@ -72,30 +73,29 @@ class Element(Component):
         Element.global_index += 1
 
     @staticmethod
-    def interact(action, source, destination, data_threats, generic_threats):
+    def interact(action, source, destination, data_threats, generic_threats, notes, laterally):
         source.interactions.append(Interaction(
             Element.interaction_index,
             action,
             destination,
             data_threats,
             generic_threats,
-            # TODO figure out notes and adjacency
-            '',
-            False
+            notes,
+            laterally
         ))
         Element.interaction_index += 1
 
-    def processes(self, data_threats, generic_threats):
-        Element.interact(Action.PROCESS, self, self, data_threats, generic_threats)
+    def processes(self, data_threats, generic_threats, notes, laterally):
+        Element.interact(Action.PROCESS, self, self, data_threats, generic_threats, notes, laterally)
 
-    def receives(self, source_element, data_threats, generic_threats):
-        Element.interact(Action.SEND, source_element, self, data_threats, generic_threats)
+    def receives(self, source_element, data_threats, generic_threats, notes, laterally):
+        Element.interact(Action.SEND, source_element, self, data_threats, generic_threats, notes, laterally)
 
-    def sends(self, destination_element, data_threats, generic_threats):
-        Element.interact(Action.SEND, self, destination_element, data_threats, generic_threats)
+    def sends(self, destination_element, data_threats, generic_threats, notes, laterally):
+        Element.interact(Action.SEND, self, destination_element, data_threats, generic_threats, notes, laterally)
 
-    def stores(self, data_threats, generic_threats):
-        Element.interact(Action.STORE, self, self, data_threats, generic_threats)
+    def stores(self, data_threats, generic_threats, notes, laterally):
+        Element.interact(Action.STORE, self, self, data_threats, generic_threats, notes, laterally)
 
 
 class Threat(Component):

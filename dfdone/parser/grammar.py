@@ -33,16 +33,19 @@ PROFILE         = Regex('(?P<profile>white|gr[ae]y|black)[- ]box'               
 RISKING         = Regex('(, )?risking'                                                   , IGNORECASE)
 ROLE            = Regex('(?P<role>agent|service|storage)'                                , IGNORECASE)
 TO_FROM         = Regex('([,;] )?(to|from)'                                              , IGNORECASE)
+WITH_NOTES      = Regex('([,;] )?(with)? ?not(es?|ing) ?(that)?'                         , IGNORECASE)
 
 DESCRIBED_AS = CaselessKeyword('described as')
 DISPROVE     = CaselessKeyword('disprove'    )
 IN           = CaselessKeyword('in'          )
+LATERALLY    = CaselessKeyword('laterally'   ).setResultsName('laterally')
 THREAT       = CaselessKeyword('threat'      )
 
 DESCRIPTION   = QuotedString('"', escQuote='""').setResultsName('description'  )
 GROUP         = QuotedString('"', escQuote='""').setResultsName('group'        )
 LABEL         = QuotedString('"', escQuote='""').setResultsName('label'        )
 NEW_NAME      = QuotedString('"', escQuote='""').setResultsName('new_name'     )
+NOTES         = QuotedString('"', escQuote='""').setResultsName('notes'        )
 OBJECT        = QuotedString('"', escQuote='""').setResultsName('object'       )
 SOURCE_THREAT = QuotedString('"', escQuote='""').setResultsName('source_threat')
 SUBJECT       = QuotedString('"', escQuote='""').setResultsName('subject'      )
@@ -91,7 +94,10 @@ constructs = [
     # Negative assumptions which have not been disproven should incur risk.
     DISPROVE + ASSUMPTIONS,
     # Interaction
-    SUBJECT + ACTION + EFFECT_LIST + Optional(TO_FROM + OBJECT) + Optional(BROADLY_RISKING + THREAT_LIST)
+    SUBJECT + Optional(LATERALLY) + ACTION + EFFECT_LIST
+        + Optional(TO_FROM + OBJECT)
+        + Optional(BROADLY_RISKING + THREAT_LIST)
+        + Optional(WITH_NOTES + NOTES)
 ]
 # This allows commenting out lines in the threat model file.
 for i, c in enumerate(list(constructs)):

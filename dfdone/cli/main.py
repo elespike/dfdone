@@ -36,7 +36,9 @@ def main(model):
         # TODO if specified by an arg
         html += default_style
 
-        html += build_assumption_table(parser.assumptions)
+        if parser.assumptions:
+            html += build_assumption_table(parser.assumptions)
+
         html += build_diagram(elements)
         html += build_interaction_table(elements)
         print(html)

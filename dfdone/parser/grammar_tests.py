@@ -103,7 +103,7 @@ modification_components = [
     # Literal 'threat'
     ['threat'],
     # New name
-    ['called "not feeling ""creative"" at the moment"'],
+    ['labeled "Wildly ""special"" threats"'],
     # Description
     ['described as "you ""probably"" suffer from it"']
 ]
@@ -115,6 +115,8 @@ all_tests.append(disprove_tests)
 
 interaction_components = [
     ['"Element ""One"""'],
+    # Literal 'laterally'
+    ['laterally'],
     ['sends', 'receives', 'stores'],
     # Effect list
     ['"Datum ""One""", risking "XSS", "CSRF"; "Data ""Two""" risking "SSRF"; "Data 3"'],
@@ -124,7 +126,10 @@ interaction_components = [
     ['"Element ""Two"""'],
     # Threat list
     ['broadly', 'generally'],
-    ['risking """KGB""", "other APTs"']
+    ['risking """KGB""", "other APTs"'],
+    # Notes
+    ['with note', 'with notes', 'note', 'notes', 'note that', 'noting that'],
+    ['"this is of great concern"']
 ]
 interaction_tests = [' '.join(p) for p in product(*interaction_components)]
 all_tests.append(interaction_tests)

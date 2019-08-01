@@ -32,7 +32,6 @@ def build_components(parsed_results):
         elif r.impact:
             build_threat(r)
 
-        # TODO
         elif r.assumptions:
             global assumptions
             for a in r.assumptions:
@@ -66,7 +65,6 @@ def build_components(parsed_results):
                     generic_threats.extend(component_groups[t.label])
             trigger_actions(r, data_threats, generic_threats)
 
-    # TODO better
     return [v for v in components.values() if isinstance(v, Element)]
 
 def get_role(role_name):
@@ -168,22 +166,58 @@ def trigger_actions(parsed_result, data_threats, generic_threats):
     global components, component_groups
     if parsed_result.action == Action.PROCESS:
         if parsed_result.subject in components:
-            components[parsed_result.subject].processes(data_threats, generic_threats)
+            components[parsed_result.subject].processes(
+                data_threats,
+                generic_threats,
+                parsed_result.notes,
+                parsed_result.laterally.isalpha()
+            )
         for e in component_groups.get(parsed_result.subject, []):
-            e.processes(data_threats, generic_threats)
+            e.processes(
+                data_threats,
+                generic_threats,
+                parsed_result.notes,
+                parsed_result.laterally.isalpha()
+            )
+
     if parsed_result.action == Action.RECEIVE:
         if parsed_result.subject in components:
-            components[parsed_result.subject].receives(components[parsed_result.object], data_threats, generic_threats)
+            components[parsed_result.subject].receives(
+                components[parsed_result.object],
+                data_threats,
+                generic_threats,
+                parsed_result.notes,
+                parsed_result.laterally.isalpha()
+            )
         for e in component_groups.get(parsed_result.subject, []):
-            e.receives(components[parsed_result.object], data_threats, generic_threats)
+            e.receives(
+                components[parsed_result.object],
+                data_threats,
+                generic_threats,
+                parsed_result.notes,
+                parsed_result.laterally.isalpha()
+            )
+
     if parsed_result.action == Action.SEND:
         if parsed_result.subject in components:
-            components[parsed_result.subject].sends(components[parsed_result.object], data_threats, generic_threats)
+            components[parsed_result.subject].sends(components[parsed_result.object], data_threats, generic_threats, parsed_result.notes, parsed_result.laterally.isalpha())
         for e in component_groups.get(parsed_result.subject, []):
-            e.sends(components[parsed_result.object], data_threats, generic_threats)
+            e.sends(
+                components[parsed_result.object],
+                data_threats,
+                generic_threats,
+                parsed_result.notes,
+                parsed_result.laterally.isalpha()
+            )
+
     if parsed_result.action == Action.STORE:
         if parsed_result.subject in components:
-            components[parsed_result.subject].stores(data_threats, generic_threats)
+            components[parsed_result.subject].stores(data_threats, generic_threats, parsed_result.notes, parsed_result.laterally.isalpha())
         for e in component_groups.get(parsed_result.subject, []):
-            e.stores(data_threats, generic_threats)
+            e.stores(
+                data_threats,
+                generic_threats,
+                parsed_result.notes,
+                parsed_result.laterally.isalpha()
+            )
 
