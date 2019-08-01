@@ -200,7 +200,13 @@ def trigger_actions(parsed_result, data_threats, generic_threats):
 
     if parsed_result.action == Action.SEND:
         if parsed_result.subject in components:
-            components[parsed_result.subject].sends(components[parsed_result.object], data_threats, generic_threats, parsed_result.notes, parsed_result.laterally.isalpha())
+            components[parsed_result.subject].sends(
+                components[parsed_result.object],
+                data_threats,
+                generic_threats,
+                parsed_result.notes,
+                parsed_result.laterally.isalpha()
+            )
         for e in component_groups.get(parsed_result.subject, []):
             e.sends(
                 components[parsed_result.object],
@@ -212,7 +218,12 @@ def trigger_actions(parsed_result, data_threats, generic_threats):
 
     if parsed_result.action == Action.STORE:
         if parsed_result.subject in components:
-            components[parsed_result.subject].stores(data_threats, generic_threats, parsed_result.notes, parsed_result.laterally.isalpha())
+            components[parsed_result.subject].stores(
+                data_threats,
+                generic_threats,
+                parsed_result.notes,
+                parsed_result.laterally.isalpha()
+            )
         for e in component_groups.get(parsed_result.subject, []):
             e.stores(
                 data_threats,
