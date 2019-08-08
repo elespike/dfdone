@@ -5,6 +5,17 @@ from itertools import product
 # as dfdone.parser.grammar.constructs.
 all_tests = list()
 
+include_components = [
+    # Literal 'include'
+    ['include'],
+    # Path
+    ['"/path/to/file.tml"', '"/path/to/dir"'],
+    # Label
+    ['as "assumptions"']
+]
+include_tests = [' '.join(p) for p in product(*include_components)]
+all_tests.append(include_tests)
+
 element_components = [
     # Label
     ['"the ""awesomator"""'],
@@ -114,6 +125,9 @@ disprove_tests = ['disprove "No transport security!"', 'disprove "bad1", "bad2",
 all_tests.append(disprove_tests)
 
 interaction_components = [
+    # Ordinals
+    ['1.', '(1)', '1)', '1 -'],
+    # Subject
     ['"Element ""One"""'],
     # Literal 'laterally'
     ['laterally'],
@@ -122,7 +136,7 @@ interaction_components = [
     ['"Datum ""One""", risking "XSS", "CSRF"; "Data ""Two""" risking "SSRF"; "Data 3"'],
     # Literals 'to' or 'from'
     ['to', 'from'],
-    # Source or destination
+    # Object
     ['"Element ""Two"""'],
     # Threat list
     ['broadly', 'generally'],

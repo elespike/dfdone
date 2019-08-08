@@ -16,7 +16,7 @@ from pyparsing import (
     lineStart
 )
 
-from dfdone.parser import grammar_tests
+from dfdone.tml import grammar_tests
 
 
 # Creating a named group exposes the match as an attribute.
@@ -28,6 +28,7 @@ IMPACT          = Regex('(?P<impact>high|medium|low) (impact|severity),?'       
 IS_A            = Regex('(is|are) ?(an?|the)?'                                           , IGNORECASE)
 IS_NOW_A        = Regex('(is|are) (?P<modify>now) ?(an?|the)?'                           , IGNORECASE)
 LABELED         = Regex('labell?ed'                                                      , IGNORECASE)
+ORDINAL         = Regex('\(?[0-9]{1,2}[.)]? ?-?'                                                     )
 PROBABILITY     = Regex('(, )?(?P<probability>high|medium|low) (probability|likelihood)' , IGNORECASE)
 PROFILE         = Regex('(?P<profile>white|gr[ae]y|black)[- ]box'                        , IGNORECASE)
 RISKING         = Regex('(, )?risking'                                                   , IGNORECASE)
@@ -35,11 +36,13 @@ ROLE            = Regex('(?P<role>agent|service|storage)'                       
 TO_FROM         = Regex('([,;] )?(to|from)'                                              , IGNORECASE)
 WITH_NOTES      = Regex('([,;] )?(with)? ?not(es?|ing) ?(that)?'                         , IGNORECASE)
 
-DESCRIBED_AS = CaselessKeyword('described as')
-DISPROVE     = CaselessKeyword('disprove'    )
-IN           = CaselessKeyword('in'          )
-LATERALLY    = CaselessKeyword('laterally'   ).setResultsName('laterally')
-THREAT       = CaselessKeyword('threat'      )
+AS        = CaselessKeyword('as'          )
+DESCRIBED = CaselessKeyword('described'   )
+DISPROVE  = CaselessKeyword('disprove'    )
+IN        = CaselessKeyword('in'          )
+INCLUDE   = CaselessKeyword('include'     )
+LATERALLY = CaselessKeyword('laterally'   ).setResultsName('laterally')
+THREAT    = CaselessKeyword('threat'      )
 
 DESCRIPTION   = QuotedString('"', escQuote='""').setResultsName('description'  )
 GROUP         = QuotedString('"', escQuote='""').setResultsName('group'        )
@@ -47,6 +50,7 @@ LABEL         = QuotedString('"', escQuote='""').setResultsName('label'        )
 NEW_NAME      = QuotedString('"', escQuote='""').setResultsName('new_name'     )
 NOTES         = QuotedString('"', escQuote='""').setResultsName('notes'        )
 OBJECT        = QuotedString('"', escQuote='""').setResultsName('object'       )
+PATH          = QuotedString('"', escQuote='""').setResultsName('path'         )
 SOURCE_THREAT = QuotedString('"', escQuote='""').setResultsName('source_threat')
 SUBJECT       = QuotedString('"', escQuote='""').setResultsName('subject'      )
 
@@ -65,21 +69,18 @@ def test_grammar(construct, construct_tests):
         if isinstance(r[-1], ParseException):
             sys_exit(1)
 
-# TODO:
-# - threat library import
-# - interaction notes and adjacency
-
 # The ordering of this list matters!
-# Construct definitions (e.g., LABEL + IS_A) should come first.
-# Furthermore, the order of this list must match
-# the order of dfdone.parser.grammar_tests.all_tests.
+# Construct definitions (e.g., LABEL + IS_A) should come after INCLUDE.
+# Furthermore, the order of this list must match the order of dfdone.parser.grammar_tests.all_tests.
 constructs = [
+    # Parse additional files
+    INCLUDE + PATH + Optional(AS + LABEL),
     # Element
-    LABEL + IS_A + PROFILE + ROLE + Optional(IN + GROUP) + Optional(DESCRIBED_AS + DESCRIPTION),
+    LABEL + IS_A + PROFILE + ROLE + Optional(IN + GROUP) + Optional(DESCRIBED + AS + DESCRIPTION),
     # Datum
-    LABEL + IS_A + CLASSIFICATION + DATUM + Optional(DESCRIBED_AS + DESCRIPTION),
+    LABEL + IS_A + CLASSIFICATION + DATUM + Optional(DESCRIBED + AS + DESCRIPTION),
     # Threat
-    LABEL + IS_A + IMPACT + PROBABILITY + THREAT + Optional(DESCRIBED_AS + DESCRIPTION),
+    LABEL + IS_A + IMPACT + PROBABILITY + THREAT + Optional(DESCRIBED + AS + DESCRIPTION),
     # Label list or alias
     LABEL + IS_A + LABEL_LIST,
     # Component modification
@@ -88,20 +89,19 @@ constructs = [
         + Optional(CLASSIFICATION) + Optional(DATUM)
         + Optional(IMPACT) + Optional(PROBABILITY) + Optional(THREAT)
         + Optional(LABELED + NEW_NAME)
-        + Optional(DESCRIBED_AS + DESCRIPTION),
+        + Optional(DESCRIBED + AS + DESCRIPTION),
     # These are negative assumptions; i.e, anti-patterns which must be disproven.
     # E.g., disprove "lack of transport security".
     # Negative assumptions which have not been disproven should incur risk.
     DISPROVE + ASSUMPTIONS,
     # Interaction
-    SUBJECT + Optional(LATERALLY) + ACTION + EFFECT_LIST
+    Optional(ORDINAL) + SUBJECT + Optional(LATERALLY) + ACTION + EFFECT_LIST
         + Optional(TO_FROM + OBJECT)
         + Optional(BROADLY_RISKING + THREAT_LIST)
         + Optional(WITH_NOTES + NOTES)
 ]
 # This allows commenting out lines in the threat model file.
-for i, c in enumerate(list(constructs)):
-    constructs[i] = lineStart + c + Optional(Literal('.'))  # doesn't work with lineEnd, dunno why.
+constructs = [lineStart + c + Optional(Literal('.')) for c in constructs]
 
 if __name__ == '__main__':
     for c, t in zip(constructs, grammar_tests.all_tests):
