@@ -5,7 +5,6 @@ from pyparsing import (
     CaselessKeyword,
     Group          ,
     Literal        ,
-    OneOrMore      ,
     Optional       ,
     Or             ,
     ParseException ,
@@ -24,6 +23,7 @@ ACTION          = Regex('(?P<action>process|receive|send|store)[es]?s?'         
 BROADLY_RISKING = Regex('([,;] )?(broadly|generally) risking'                            , IGNORECASE)
 CLASSIFICATION  = Regex('(?P<classification>confidential|public|restricted)'             , IGNORECASE)
 DATUM           = Regex('dat[ua]m?'                                                      , IGNORECASE)
+EXCEPT_FOR      = Regex('([,;] )?except( for)?'                                          , IGNORECASE)
 IMPACT          = Regex('(?P<impact>high|medium|low) (impact|severity),?'                , IGNORECASE)
 IS_A            = Regex('(is|are) ?(an?|the)?'                                           , IGNORECASE)
 IS_NOW_A        = Regex('(is|are) (?P<modify>now) ?(an?|the)?'                           , IGNORECASE)
@@ -36,13 +36,13 @@ ROLE            = Regex('(?P<role>agent|service|storage)'                       
 TO_FROM         = Regex('([,;] )?(to|from)'                                              , IGNORECASE)
 WITH_NOTES      = Regex('([,;] )?(with)? ?not(es?|ing) ?(that)?'                         , IGNORECASE)
 
-AS        = CaselessKeyword('as'          )
-DESCRIBED = CaselessKeyword('described'   )
-DISPROVE  = CaselessKeyword('disprove'    )
-IN        = CaselessKeyword('in'          )
-INCLUDE   = CaselessKeyword('include'     )
-LATERALLY = CaselessKeyword('laterally'   ).setResultsName('laterally')
-THREAT    = CaselessKeyword('threat'      )
+AS        = CaselessKeyword('as'       )
+DESCRIBED = CaselessKeyword('described')
+DISPROVE  = CaselessKeyword('disprove' )
+IN        = CaselessKeyword('in'       )
+INCLUDE   = CaselessKeyword('include'  )
+LATERALLY = CaselessKeyword('laterally').setResultsName('laterally')
+THREAT    = CaselessKeyword('threat'   )
 
 DESCRIPTION   = QuotedString('"', escQuote='""').setResultsName('description'  )
 GROUP         = QuotedString('"', escQuote='""').setResultsName('group'        )
@@ -55,26 +55,18 @@ SOURCE_THREAT = QuotedString('"', escQuote='""').setResultsName('source_threat')
 SUBJECT       = QuotedString('"', escQuote='""').setResultsName('subject'      )
 
 ASSUMPTIONS = delimitedList(Group(LABEL) , ',').setResultsName('assumptions')
+EXCEPTIONS  = delimitedList(Group(LABEL) , ',').setResultsName('exceptions' )
 LABEL_LIST  = delimitedList(Group(LABEL) , ',').setResultsName('label_list' )
 THREAT_LIST = delimitedList(Group(LABEL) , ',').setResultsName('threat_list')
 EFFECT = LABEL + ZeroOrMore(RISKING + THREAT_LIST)
 EFFECT_LIST = delimitedList(Group(EFFECT), ';').setResultsName('effect_list')
-
-def test_grammar(construct, construct_tests):
-    # TODO the development version of pyparsing offers
-    # a "file" kwarg where to write testing output.
-    # Once released, let's use it.
-    # for r in construct.runTests(construct_tests, file=FILE_OBJECT)[1]:
-    for r in construct.runTests(construct_tests)[1]:
-        if isinstance(r[-1], ParseException):
-            sys_exit(1)
 
 # The ordering of this list matters!
 # Construct definitions (e.g., LABEL + IS_A) should come after INCLUDE.
 # Furthermore, the order of this list must match the order of dfdone.parser.grammar_tests.all_tests.
 constructs = [
     # Parse additional files
-    INCLUDE + PATH + Optional(AS + LABEL),
+    INCLUDE + PATH + Optional(Or([AS, IN]) + LABEL) + Optional(EXCEPT_FOR + EXCEPTIONS),
     # Element
     LABEL + IS_A + PROFILE + ROLE + Optional(IN + GROUP) + Optional(DESCRIBED + AS + DESCRIPTION),
     # Datum
@@ -104,6 +96,14 @@ constructs = [
 constructs = [lineStart + c + Optional(Literal('.')) for c in constructs]
 
 if __name__ == '__main__':
+    def test_grammar(construct, construct_tests):
+        # TODO move to formal tests once those exist
+        for r in construct.runTests(construct_tests, parseAll=True)[1]:
+            if isinstance(r[-1], ParseException):
+                sys_exit(1)
+        # TODO convert to logging, when logging exists
+        print('[+] Grammar tests successful!')
+
     for c, t in zip(constructs, grammar_tests.all_tests):
         test_grammar(c, t)
 

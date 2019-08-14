@@ -96,6 +96,10 @@ class Parser:
         for r in parsed_results:
             if r.path:
                 self.include_file(r.path, r.label)
+                for e in r.exceptions:
+                    if e.label not in self.components:
+                        continue
+                    self.component_groups[r.label].remove(self.components[e.label])
 
             elif r.modify:
                 # Don't combine these conditions into a single statement.
@@ -144,15 +148,19 @@ class Parser:
                 self.trigger_actions(r, data_threats, generic_threats)
 
     def include_file(self, fpath, group_label):
-        model_path = Path(self.path)
-        include_path = Path(model_path.anchor)
-        for part in model_path.absolute().parts:
+        model_path   = Path(self.path)
+        include_path = Path()
+        anchor       = Path(fpath).anchor
+        for part in model_path.resolve().parts:
             include_path = include_path.joinpath(part)
-            anchor = Path(fpath).anchor
             potential_file = include_path.joinpath(
-                fpath.replace(anchor, '', 1) if fpath.startswith(anchor) else fpath
+                fpath.replace(anchor, '', 1) if anchor and fpath.startswith(anchor) else fpath
             )
-            if potential_file.is_file():
+            if potential_file.is_dir():
+                for item in potential_file.iterdir():
+                    self.include_file(str(item.resolve()), group_label)
+
+            elif potential_file.is_file():
                 # Save the current state of self.components and self.component_groups
                 # to be able to determine what changed in the upcoming recursion.
                 _components       = copy(self.components      )
@@ -162,7 +170,7 @@ class Parser:
                 diff = [v for k, v in self.components.items() if k not in _components]
                 if group_label in self.component_groups:
                     self.component_groups[group_label].extend(diff)
-                else:
+                elif group_label:
                     self.component_groups[group_label] = diff
                 return
 
