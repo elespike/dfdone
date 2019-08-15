@@ -19,22 +19,22 @@ from dfdone.tml import grammar_tests
 
 
 # Creating a named group exposes the match as an attribute.
-ACTION          = Regex('(?P<action>process|receive|send|store)[es]?s?'                  , IGNORECASE)
-BROADLY_RISKING = Regex('([,;] )?(broadly|generally) risking'                            , IGNORECASE)
-CLASSIFICATION  = Regex('(?P<classification>confidential|public|restricted)'             , IGNORECASE)
-DATUM           = Regex('dat[ua]m?'                                                      , IGNORECASE)
-EXCEPT_FOR      = Regex('([,;] )?except( for)?'                                          , IGNORECASE)
-IMPACT          = Regex('(?P<impact>high|medium|low) (impact|severity),?'                , IGNORECASE)
-IS_A            = Regex('(is|are) ?(an?|the)?'                                           , IGNORECASE)
-IS_NOW_A        = Regex('(is|are) (?P<modify>now) ?(an?|the)?'                           , IGNORECASE)
-LABELED         = Regex('labell?ed'                                                      , IGNORECASE)
-ORDINAL         = Regex('\(?[0-9]{1,2}[.)]? ?-?'                                                     )
-PROBABILITY     = Regex('(, )?(?P<probability>high|medium|low) (probability|likelihood)' , IGNORECASE)
-PROFILE         = Regex('(?P<profile>white|gr[ae]y|black)[- ]box'                        , IGNORECASE)
-RISKING         = Regex('(, )?risking'                                                   , IGNORECASE)
-ROLE            = Regex('(?P<role>agent|service|storage)'                                , IGNORECASE)
-TO_FROM         = Regex('([,;] )?(to|from)'                                              , IGNORECASE)
-WITH_NOTES      = Regex('([,;] )?(with)? ?not(es?|ing) ?(that)?'                         , IGNORECASE)
+ACTION         = Regex('(?P<action>process|receive|send|store)[es]?s?'                , IGNORECASE)
+BROADLY        = Regex('[,;]? ?(broadly|generally)'                                   , IGNORECASE)
+CLASSIFICATION = Regex('(?P<classification>confidential|public|restricted)'           , IGNORECASE)
+DATUM          = Regex('dat[ua]m?'                                                    , IGNORECASE)
+EXCEPT_FOR     = Regex('[,;]? ?except( for)?'                                         , IGNORECASE)
+IMPACT         = Regex('(?P<impact>high|medium|low) (impact|severity),?'              , IGNORECASE)
+IS_A           = Regex('(is|are) ?(an?|the)?'                                         , IGNORECASE)
+IS_NOW_A       = Regex('(is|are) (?P<modify>now) ?(an?|the)?'                         , IGNORECASE)
+LABELED        = Regex('labell?ed'                                                    , IGNORECASE)
+ORDINAL        = Regex('\(?[0-9]{1,2}[.)]? ?-?'                                                   )
+PROBABILITY    = Regex(',? ?(?P<probability>high|medium|low) (probability|likelihood)', IGNORECASE)
+PROFILE        = Regex('(?P<profile>white|gr[ae]y|black)[- ]box'                      , IGNORECASE)
+RISKING        = Regex(',? ?risking'                                                  , IGNORECASE)
+ROLE           = Regex('(?P<role>agent|service|storage)'                              , IGNORECASE)
+TO_FROM        = Regex('[,;]? ?(to|from)'                                             , IGNORECASE)
+WITH_NOTES     = Regex('[,;]? ?(with)? ?not(es?|ing) ?(that)?'                        , IGNORECASE)
 
 AS        = CaselessKeyword('as'       )
 DESCRIBED = CaselessKeyword('described')
@@ -89,7 +89,7 @@ constructs = [
     # Interaction
     Optional(ORDINAL) + SUBJECT + Optional(LATERALLY) + ACTION + EFFECT_LIST
         + Optional(TO_FROM + OBJECT)
-        + Optional(BROADLY_RISKING + THREAT_LIST)
+        + Optional(Optional(BROADLY) + RISKING + THREAT_LIST)
         + Optional(WITH_NOTES + NOTES)
 ]
 # This allows commenting out lines in the threat model file.
