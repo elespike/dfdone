@@ -96,10 +96,7 @@ class Parser:
         for r in parsed_results:
             if r.path:
                 self.include_file(r.path, r.label)
-                for e in r.exceptions:
-                    if e.label not in self.components:
-                        continue
-                    self.component_groups[r.label].remove(self.components[e.label])
+                self.process_exceptions(r.exceptions, r.label)
 
             elif r.modify:
                 # Don't combine these conditions into a single statement.
@@ -174,6 +171,13 @@ class Parser:
                     self.component_groups[group_label] = diff
                 return
 
+    def process_exceptions(self, exceptions, group_label):
+        for e in exceptions:
+            if e.label in self.components:
+                self.component_groups[group_label].remove(self.components[e.label])
+            elif e.label in self.component_groups:
+                for c in self.component_groups[e.label]:
+                    self.component_groups[group_label].remove(c)
 
     def build_element(self, parsed_result):
         parsed_result.role    = Parser.get_role   (parsed_result.role   )

@@ -66,7 +66,7 @@ EFFECT_LIST = delimitedList(Group(EFFECT), ';').setResultsName('effect_list')
 # Furthermore, the order of this list must match the order of dfdone.parser.grammar_tests.all_tests.
 constructs = [
     # Parse additional files
-    INCLUDE + PATH + Optional(Or([AS, IN]) + LABEL) + Optional(EXCEPT_FOR + EXCEPTIONS),
+    INCLUDE + PATH + Optional(Or([AS, IN]) + LABEL + Optional(EXCEPT_FOR + EXCEPTIONS)),
     # Element
     LABEL + IS_A + PROFILE + ROLE + Optional(IN + GROUP) + Optional(DESCRIBED + AS + DESCRIPTION),
     # Datum

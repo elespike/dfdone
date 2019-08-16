@@ -10,10 +10,8 @@ include_components = [
     ['include'],
     # Path
     ['"/path/to/file.tml"', '"/path/to/dir"'],
-    # Label
-    ['as "assumptions"', 'in "assumptions"'],
-    # Exceptions
-    ['except for "assume the worst"']
+    # Label and exceptions
+    ['as "assumptions"', 'as "assumptions", except for "assume the worst"'],
 ]
 include_tests = [' '.join(p) for p in product(*include_components)]
 all_tests.append(include_tests)
