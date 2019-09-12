@@ -89,8 +89,31 @@ class Parser:
         if parsed_result.description and hasattr(component, 'description'):
             component.probability = parsed_result.description
 
-    def get_elements(self):
-        return [v for v in self.components.values() if isinstance(v, Element)]
+    def yield_elements(self):
+        return (v for v in self.components.values() if isinstance(v, Element))
+
+    def yield_data(self):
+        interaction_data = {
+            k for i in self.yield_interactions()
+            for k in i.data_threats.keys()
+        }
+        return (d for d in sorted(interaction_data, key=lambda d: d.label))
+
+    def yield_threats(self):
+        interaction_threats = set()
+        for i in self.yield_interactions():
+            for threats in i.data_threats.values():
+                for t in threats:
+                    interaction_threats.add(t)
+            for t in i.generic_threats:
+                interaction_threats.add(t)
+        return (t for t in sorted(interaction_threats, key=lambda t: t.label))
+
+    def yield_interactions(self):
+        return (
+            i for e in self.yield_elements()
+            for i in e.interactions
+        )
 
     def build_components(self, fpath, parsed_results):
         for r in parsed_results:
