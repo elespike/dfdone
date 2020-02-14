@@ -5,6 +5,7 @@ from pyparsing import (
     CaselessKeyword,
     Group          ,
     Literal        ,
+    OneOrMore     ,
     Optional       ,
     Or             ,
     ParseException ,
@@ -21,6 +22,7 @@ from dfdone.tml import grammar_tests
 # Creating a named group exposes the match as an attribute.
 ACTION         = Regex('(?P<action>process|receive|send|store)[es]?s?'                , IGNORECASE)
 BROADLY        = Regex('[,;]? ?(broadly|generally)'                                   , IGNORECASE)
+CAPABILITY     = Regex('(?P<capability>full|partial|detective)'                       , IGNORECASE)
 CLASSIFICATION = Regex('(?P<classification>confidential|public|restricted)'           , IGNORECASE)
 DATUM          = Regex('dat[ua]m?'                                                    , IGNORECASE)
 EXCEPT_FOR     = Regex('[,;]? ?except( for)?'                                         , IGNORECASE)
@@ -28,6 +30,7 @@ IMPACT         = Regex('(?P<impact>high|medium|low) (impact|severity),?'        
 IS_A           = Regex('(is|are) ?(an?|the)?'                                         , IGNORECASE)
 IS_NOW_A       = Regex('(is|are) (?P<modify>now) ?(an?|the)?'                         , IGNORECASE)
 LABELED        = Regex('labell?ed'                                                    , IGNORECASE)
+MEASURE        = Regex('(?P<measure>(security )?(measures?|mitigations?|controls?))'  , IGNORECASE)
 ORDINAL        = Regex('\(?[0-9]{1,2}[.)]? ?-?'                                                   )
 PROBABILITY    = Regex(',? ?(?P<probability>high|medium|low) (probability|likelihood)', IGNORECASE)
 PROFILE        = Regex('(?P<profile>white|gr[ae]y|black)[- ]box'                      , IGNORECASE)
@@ -37,6 +40,7 @@ TO_FROM        = Regex('[,;]? ?(to|from)'                                       
 WITH_NOTES     = Regex('[,;]? ?(with)? ?not(es?|ing) ?(that)?'                        , IGNORECASE)
 
 AS        = CaselessKeyword('as'       )
+AGAINST   = CaselessKeyword('against'  )
 DESCRIBED = CaselessKeyword('described')
 DISPROVE  = CaselessKeyword('disprove' )
 IN        = CaselessKeyword('in'       )
@@ -73,15 +77,21 @@ constructs = [
     LABEL + IS_A + CLASSIFICATION + DATUM + Optional(DESCRIBED + AS + DESCRIPTION),
     # Threat
     LABEL + IS_A + IMPACT + PROBABILITY + THREAT + Optional(DESCRIBED + AS + DESCRIPTION),
+    # Security Measure
+    LABEL + IS_A + CAPABILITY + MEASURE + AGAINST + THREAT_LIST + Optional(DESCRIBED + AS + DESCRIPTION),
     # Label list or alias
     LABEL + IS_A + LABEL_LIST,
     # Component modification
-    LABEL + IS_NOW_A
-        + Optional(PROFILE) + Optional(ROLE) + Optional(IN + GROUP)
-        + Optional(CLASSIFICATION) + Optional(DATUM)
-        + Optional(IMPACT) + Optional(PROBABILITY) + Optional(THREAT)
-        + Optional(LABELED + NEW_NAME)
-        + Optional(DESCRIBED + AS + DESCRIPTION),
+    LABEL + IS_NOW_A + Or([
+        LABELED + NEW_NAME,
+        DESCRIBED + AS + DESCRIPTION,
+        Or([
+            OneOrMore(PROFILE | ROLE | IN + GROUP) |
+            CLASSIFICATION + DATUM,
+            OneOrMore(IMPACT | PROBABILITY) + THREAT,
+            Or([CAPABILITY + MEASURE, MEASURE + AGAINST + THREAT_LIST]),
+        ]) + Optional(DESCRIBED + AS + DESCRIPTION)
+    ]),
     # These are negative assumptions; i.e, anti-patterns which must be disproven.
     # E.g., disprove "lack of transport security".
     # Negative assumptions which have not been disproven should incur risk.
@@ -93,7 +103,7 @@ constructs = [
         + Optional(WITH_NOTES + NOTES)
 ]
 # This allows commenting out lines in the threat model file.
-constructs = [lineStart + c + Optional(Literal('.')) for c in constructs]
+constructs = [lineStart + c + Optional(Literal('.')) for c in list(constructs)]
 
 if __name__ == '__main__':
     def test_grammar(construct, construct_tests):
@@ -101,9 +111,13 @@ if __name__ == '__main__':
         for r in construct.runTests(construct_tests, parseAll=True)[1]:
             if isinstance(r[-1], ParseException):
                 sys_exit(1)
-        # TODO convert to logging, when logging exists
-        print('[+] Grammar tests successful!')
 
+    # TODO convert to logging, when logging exists
+    print('[*] Beginning grammar tests...')
+    count = 0
     for c, t in zip(constructs, grammar_tests.all_tests):
-        test_grammar(c, t)
+        count += len(t)
+        test_grammar(c, t)  # exits if unsuccessful
+    # TODO convert to logging, when logging exists
+    print('[+] {} grammar tests successful!'.format(count))
 

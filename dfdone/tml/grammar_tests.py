@@ -73,6 +73,27 @@ threat_components = [
 threat_tests = [' '.join(p) for p in product(*threat_components)]
 all_tests.append(threat_tests)
 
+measure_components = [
+    # Label
+    ['"Input ""validation"""'],
+    # Verbs
+    ['is', 'are'],
+    # Articles
+    ['a', 'an', 'the'],
+    # Capability
+    ['full', 'partial', 'detective'],
+    # Literals
+    ['', 'security'],
+    ['measure', 'mitigation', 'control'],
+    ['against'],
+    # Threat list
+    ['"XSS", "SQLi"'],
+    # Description
+    ['described as "you ""probably"" should implement some"']
+]
+measure_tests = [' '.join(p) for p in product(*measure_components)]
+all_tests.append(measure_tests)
+
 label_list_components = [
     # Label
     ['"""Standard"" threats"'],
@@ -86,39 +107,93 @@ label_list_components = [
 label_list_tests = [' '.join(p) for p in product(*label_list_components)]
 all_tests.append(label_list_tests)
 
-# No need to re-test every single variation.
-# Let's just make sure they work together.
-modification_components = [
+modification_tests = list()
+meta_modifications = [
     # Label
-    ['"""Standard"" threats"'],
+    ['"This ""thing"""'],
+    # Verbs
+    ['is', 'are'],
+    # Literal 'now'
+    ['now'],
+    # New name or description
+    ['labeled', 'described as'],
+    ['"exactly what it ""seems"""']
+]
+modification_tests.extend([' '.join(p) for p in product(*meta_modifications)])
+
+element_modifications = [
+    # Label
+    ['"This ""thing"""'],
     # Verbs
     ['is', 'are'],
     # Literal 'now'
     ['now'],
     # Articles
     ['a', 'an', 'the'],
-    # Profiles
-    ['white box'],
-    # Roles
-    ['agent'],
+    # Profiles and roles
+    ['white box', 'agent', 'white box agent'],
     # Group
-    ['in "the ""awesome"" group"'],
+    ['', 'in "the ""awesome"" group"'],
+    # Description
+    ['', 'described as "exactly what it ""seems"""']
+]
+modification_tests.extend([' '.join(p) for p in product(*element_modifications)])
+
+datum_modifications = [
+    # Label
+    ['"This ""thing"""'],
+    # Verbs
+    ['is', 'are'],
+    # Literal 'now'
+    ['now'],
+    # Articles
+    ['a', 'an', 'the'],
     # Classification
     ['public'],
     # Literals 'datum' or 'data'
     ['datum', 'data'],
-    # Impact
-    ['high impact'],
-    # Probability
-    ['high probability'],
+    # Description
+    ['', 'described as "exactly what it ""seems"""']
+]
+modification_tests.extend([' '.join(p) for p in product(*datum_modifications)])
+
+threat_modifications = [
+    # Label
+    ['"This ""thing"""'],
+    # Verbs
+    ['is', 'are'],
+    # Literal 'now'
+    ['now'],
+    # Articles
+    ['a', 'an', 'the'],
+    # Impact and probability
+    ['high impact', 'high probability', 'high impact, high probability'],
     # Literal 'threat'
     ['threat'],
-    # New name
-    ['labeled "Wildly ""special"" threats"'],
     # Description
-    ['described as "you ""probably"" suffer from it"']
+    ['', 'described as "exactly what it ""seems"""']
 ]
-modification_tests = [' '.join(p) for p in product(*modification_components)]
+modification_tests.extend([' '.join(p) for p in product(*threat_modifications)])
+
+measure_modifications = [
+    # Label
+    ['"This ""thing"""'],
+    # Verbs
+    ['is', 'are'],
+    # Literal 'now'
+    ['now'],
+    # Articles
+    ['a', 'an', 'the'],
+    # Capability
+    ['', 'full'],
+    # Literal
+    ['measure'],
+    # Literal 'against' + threat list
+    ['', 'against "XSS", "SQLi"'],
+    # Description
+    ['', 'described as "exactly what it ""seems"""']
+]
+modification_tests.extend([' '.join(p) for p in product(*threat_modifications)])
 all_tests.append(modification_tests)
 
 disprove_tests = ['disprove "No transport security!"', 'disprove "bad1", "bad2", "bad3"']
