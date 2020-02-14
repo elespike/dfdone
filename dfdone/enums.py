@@ -48,7 +48,21 @@ class Probability(IntEnum):
 
 @unique
 class Risk(IntEnum):
-    LOW = 4
-    MEDIUM = 8
-    HIGH = 27
+    # LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+
+
+@unique
+class Capability(IntEnum):
+    DETECTIVE = 0
+    PARTIAL = 1
+    FULL = 2
+
+
+@unique
+class Status(IntEnum):
+    PENDING = 0
+    IMPLEMENTED = 1
+    VERIFIED = 2
 

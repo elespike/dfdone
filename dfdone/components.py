@@ -1,6 +1,15 @@
 from collections import defaultdict as ddict, namedtuple
-from .enums import Classification, Role, Profile, \
-    Risk, Action, Impact, Probability
+
+from .enums import (
+    Action,
+    Classification,
+    Impact,
+    Probability,
+    Profile,
+    Risk,
+    Role,
+    Status,
+)
 
 
 class Component:
@@ -111,10 +120,20 @@ class Threat(Component):
     # Defauting to Classification.RESTRICTED effectively means that
     # only impact and probability will be significant in the calculation.
     def calculate_risk(self, classification=Classification.RESTRICTED):
-        r = self.impact * self.probability * classification
-        if r <= Risk.LOW:
+        r = (self.impact + self.probability + classification) / 3
+        if r < Risk.MEDIUM:
             return Risk.LOW
-        if r <= Risk.MEDIUM:
+        if r == Risk.MEDIUM:
             return Risk.MEDIUM
         return Risk.HIGH
+
+
+class Measure(Component):
+    def __init__(self, label, capability, threats, description):
+        super().__init__(label, description)
+        self.capability = capability
+        self.threats = threats
+
+        self.required = False
+        self.status = Status.PENDING
 
