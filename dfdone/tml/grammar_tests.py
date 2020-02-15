@@ -223,3 +223,15 @@ interaction_components = [
 interaction_tests = [' '.join(p) for p in product(*interaction_components)]
 all_tests.append(interaction_tests)
 
+mitigation_components = [
+    # Label
+    ['"Input ""validation"""'],
+    ['must', 'should', 'has', 'have'],
+    ['be', 'been'],
+    ['implemented', 'applied', 'deployed', 'verified', 'checked'],
+    ['on "username"', 'on "username", "password"', 'on all data', 'on all data except "username"', 'on all data except "username", "password"'],
+    ['between "User" and "Web"', 'between "User" and "Web", "Web" and "DB"', 'between all nodes', 'between all nodes except "User" and "Web"', 'between all nodes except "User" and "Web", "Web" and "DB"'],
+]
+mitigation_tests = [' '.join(p) for p in product(*mitigation_components)]
+all_tests.append(mitigation_tests)
+
