@@ -48,9 +48,16 @@ class Probability(IntEnum):
 
 @unique
 class Risk(IntEnum):
-    # LOW = 1
+    LOW = 1
     MEDIUM = 2
     HIGH = 3
+
+
+@unique
+class Imperative(IntEnum):
+    MUST = 0
+    SHOULD = 1
+    MAY = 2
 
 
 @unique

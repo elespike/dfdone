@@ -31,11 +31,12 @@ DATUM          = Regex('dat[ua]m?'                                              
 EXCEPT         = Regex('[,;]? ?except( for)?'                                         , IGNORECASE)
 HAS            = Regex('(?P<done>ha(s|ve))'                                           , IGNORECASE)
 IMPACT         = Regex('(?P<impact>high|medium|low) (impact|severity),?'              , IGNORECASE)
+IMPERATIVE     = Regex('(?P<imperative>must|should|may)'                              , IGNORECASE)
 IMPLEMENTED    = Regex('(?P<implemented>implemented|applied|deployed)'                , IGNORECASE)
 IS_A           = Regex('(is|are) ?(an?|the)?'                                         , IGNORECASE)
 IS_NOW_A       = Regex('(is|are) (?P<modify>now) ?(an?|the)?'                         , IGNORECASE)
 LABELED        = Regex('labell?ed'                                                    , IGNORECASE)
-MEASURE        = Regex('(?P<measure>(security )?(measures?|mitigations?|controls?))'  , IGNORECASE)
+MEASURE        = Regex('((security )?(measures?|mitigations?|controls?))'             , IGNORECASE)
 ORDINAL        = Regex('\(?[0-9]{1,2}[.)]? ?-?'                                                   )
 PROBABILITY    = Regex(',? ?(?P<probability>high|medium|low) (probability|likelihood)', IGNORECASE)
 PROFILE        = Regex('(?P<profile>white|gr[ae]y|black)[- ]box'                      , IGNORECASE)
@@ -55,9 +56,7 @@ DISPROVE  = CaselessKeyword('disprove' )
 IN        = CaselessKeyword('in'       )
 INCLUDE   = CaselessKeyword('include'  )
 LATERALLY = CaselessKeyword('laterally').setResultsName('laterally')
-MUST      = CaselessKeyword('must'     ).setResultsName('required' )
 ON        = CaselessKeyword('on'       )
-SHOULD    = CaselessKeyword('should'   )
 THREAT    = CaselessKeyword('threat'   )
 
 DESCRIPTION   = QuotedString('"', escQuote='""').setResultsName('description'  )
@@ -121,7 +120,7 @@ constructs = [
         + Optional(Optional(BROADLY) + RISKING + THREAT_LIST)
         + Optional(WITH_NOTES + NOTES),
     # Mitigation
-    LABEL + (MUST ^ SHOULD ^ HAS) + BE + (IMPLEMENTED ^ VERIFIED)
+    LABEL + (IMPERATIVE ^ HAS) + BE + (IMPLEMENTED ^ VERIFIED)
         + ON + (LABEL_LIST ^ (ALL_DATA + Optional(EXCEPT + LABEL_LIST)))
         + BETWEEN + (LABEL_PAIR_LIST ^ (ALL_NODES + Optional(EXCEPT + LABEL_PAIR_LIST)))
 ]

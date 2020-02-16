@@ -4,6 +4,7 @@ from .enums import (
     Action,
     Classification,
     Impact,
+    Imperative,
     Probability,
     Profile,
     Risk,
@@ -134,6 +135,6 @@ class Measure(Component):
         self.capability = capability
         self.threats = threats
 
-        self.required = False
+        self.imperative = Imperative.MUST
         self.status = Status.PENDING
 
