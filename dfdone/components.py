@@ -34,31 +34,19 @@ class Datum(Component):
 
 
 class Interaction:
-    def __init__(self, index, action, target, data_threats, generic_threats, notes, laterally):
+    def __init__(self, index, action, source, target, data_threats, broad_threats, notes, laterally):
         self.index = index
         self.action = action
+        self.source = source
         self.target = target
 
         if type(data_threats) == Datum:
-            data_threats = [data_threats]
+            data_threats = list(data_threats)
         if type(data_threats) == list:
-            data_threats = {k: [] for k in data_threats}
+            data_threats = {d: list() for d in data_threats}
         self.data_threats = data_threats
 
-        self.generic_threats = generic_threats
-
-        # Assign and sort by risk.
-        classification_list = list()
-        for datum, threats in data_threats.items():
-            classification_list.append(datum.classification)
-            self.data_threats[datum].sort(
-                key=lambda t: t.calculate_risk(datum.classification),
-                reverse=True
-            )
-        self.generic_threats.sort(
-            key=lambda t: t.calculate_risk(sum(classification_list) / len(classification_list)),
-            reverse=True
-        )
+        self.broad_threats = broad_threats
 
         self.notes = notes
         # Using 'not laterally' because the 'constraint' graphviz attribute is the opposite;
@@ -79,48 +67,55 @@ class Element(Component):
 
         self.interactions = list()
 
-        self.index = Element.global_index
+        # TODO not needed?
+        # self.index = Element.global_index
         Element.global_index += 1
 
     @staticmethod
-    def interact(action, source, destination, data_threats, generic_threats, notes, laterally):
+    def interact(action, source, destination, data_threats, broad_threats, notes, laterally):
         source.interactions.append(Interaction(
             Element.interaction_index,
             action,
+            source,
             destination,
             data_threats,
-            generic_threats,
+            broad_threats,
             notes,
             laterally
         ))
         Element.interaction_index += 1
 
-    def processes(self, data_threats, generic_threats, notes, laterally):
-        Element.interact(Action.PROCESS, self, self, data_threats, generic_threats, notes, laterally)
+    def processes(self, data_threats, broad_threats, notes, laterally):
+        Element.interact(Action.PROCESS, self, self, data_threats, broad_threats, notes, laterally)
 
-    def receives(self, source_element, data_threats, generic_threats, notes, laterally):
-        Element.interact(Action.SEND, source_element, self, data_threats, generic_threats, notes, laterally)
+    def receives(self, source_element, data_threats, broad_threats, notes, laterally):
+        Element.interact(Action.RECEIVE, source_element, self, data_threats, broad_threats, notes, laterally)
 
-    def sends(self, destination_element, data_threats, generic_threats, notes, laterally):
-        Element.interact(Action.SEND, self, destination_element, data_threats, generic_threats, notes, laterally)
+    def sends(self, destination_element, data_threats, broad_threats, notes, laterally):
+        Element.interact(Action.SEND, self, destination_element, data_threats, broad_threats, notes, laterally)
 
-    def stores(self, data_threats, generic_threats, notes, laterally):
-        Element.interact(Action.STORE, self, self, data_threats, generic_threats, notes, laterally)
+    def stores(self, data_threats, broad_threats, notes, laterally):
+        Element.interact(Action.STORE, self, self, data_threats, broad_threats, notes, laterally)
 
 
 class Threat(Component):
-    def __init__(self, label, impact, probability, description, recommendations=None, tests=None):
+    def __init__(self, label, impact, probability, description):
         super().__init__(label, description)
-
         self.impact, self.probability = impact, probability
-
-        # TODO these two could be their own classes with their own collections/libraries.
-        self.recommendations = [] if recommendations is None else recommendations
-        self.tests = [] if tests is None else tests
+        self.measures = set()
+        self.mitigated = False
 
     # Defauting to Classification.RESTRICTED effectively means that
     # only impact and probability will be significant in the calculation.
     def calculate_risk(self, classification=Classification.RESTRICTED):
+        if self.mitigated:
+            for m in self.measures:
+                # TODO this turns self.probability into an int,
+                # might be good to assign it back to its corresponding Probability IntEnum.
+                self.probability -= m.capability
+                if self.probability < Probability.LOW:
+                    self.probability = Probability.LOW
+                    break
         r = (self.impact + self.probability + classification) / 3
         if r < Risk.MEDIUM:
             return Risk.LOW
@@ -130,11 +125,9 @@ class Threat(Component):
 
 
 class Measure(Component):
-    def __init__(self, label, capability, threats, description):
+    def __init__(self, label, capability, description):
         super().__init__(label, description)
         self.capability = capability
-        self.threats = threats
-
         self.imperative = Imperative.MUST
         self.status = Status.PENDING
 

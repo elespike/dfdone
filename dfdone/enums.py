@@ -58,6 +58,7 @@ class Imperative(IntEnum):
     MUST = 0
     SHOULD = 1
     MAY = 2
+    NONE = 3
 
 
 @unique

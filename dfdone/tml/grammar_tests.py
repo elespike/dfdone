@@ -230,7 +230,7 @@ mitigation_components = [
     ['be', 'been'],
     ['implemented', 'applied', 'deployed', 'verified', 'checked'],
     ['on "username"', 'on "username", "password"', 'on all data', 'on all data except "username"', 'on all data except "username", "password"'],
-    ['between "User" and "Web"', 'between "User" and "Web", "Web" and "DB"', 'between all nodes', 'between all nodes except "User" and "Web"', 'between all nodes except "User" and "Web", "Web" and "DB"'],
+    ['between "User" and "Web", "Web" and "DB"', 'between all nodes except "User" and "Web", "Web" and "DB"', 'within "User", "Web"', 'within all nodes except "User"', 'within all nodes except "User", "Web"', 'between "User" and "Web", and within "DB"'],
 ]
 mitigation_tests = [' '.join(p) for p in product(*mitigation_components)]
 all_tests.append(mitigation_tests)

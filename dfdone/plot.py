@@ -7,9 +7,6 @@ from .components import Datum, Element, Interaction
 from .enums import Profile, Role, Risk, Classification
 
 
-# TODO figure out how to display whether threats have been mitigated or accepted.
-
-
 default_style = '''
 <style>
   table {
@@ -100,6 +97,7 @@ def build_assumption_table(assumptions):
     return table_from_list('assumption_table', assumption_table)
 
 def build_data_table(data):
+    # TODO formatting for classification?
     data_table = ['<thead>\n<th>#</th>\n<th>Data</th>\n<th>Description</th>\n</thead>\n<tbody>']
     for i, d in enumerate(data):
         data_table.append('<tr>')
@@ -222,7 +220,7 @@ def build_interaction_table(interactions):
                 ))
 
             if di == 0:
-                if not interaction.generic_threats:
+                if not interaction.broad_threats:
                     interaction_table.append('<td rowspan="{}"><div class="dash">-</div></td>'.format(interaction_rowspan))
                 else:
                     interaction_table.append('<td rowspan="{}">{}</td>'.format(
@@ -231,7 +229,7 @@ def build_interaction_table(interactions):
                             t.calculate_risk(highest_classification).name.lower(),
                             id_format(t.label),
                             t.label
-                        ) for t in interaction.generic_threats])
+                        ) for t in interaction.broad_threats])
                     ))
 
                 interaction_table.append('<td rowspan="{}"><div class="{}">{}</div></td>'.format(

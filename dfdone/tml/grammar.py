@@ -8,11 +8,13 @@ from pyparsing import (
     Group          ,
     Literal        ,
     MatchFirst     ,
-    Or             ,
+    OneOrMore      ,
     Optional       ,
+    Or             ,
     ParseException ,
     QuotedString   ,
     Regex          ,
+    Suppress       ,
     delimitedList  ,
     lineStart
 )
@@ -22,10 +24,11 @@ from dfdone.tml import grammar_tests
 
 # Creating a named group exposes the match as an attribute.
 ACTION         = Regex('(?P<action>process|receive|send|store)[es]?s?'                , IGNORECASE)
+ALL_NODES      = Regex('all (nodes|elements|systems|components)'                      , IGNORECASE)
 BE             = Regex('be(en)?'                                                      , IGNORECASE)
+BETWEEN        = Regex('[,;]? ?(and )?between'                                        , IGNORECASE)
 BROADLY        = Regex('[,;]? ?(broadly|generally)'                                   , IGNORECASE)
 CAPABILITY     = Regex('(?P<capability>full|partial|detective)'                       , IGNORECASE)
-ALL_NODES      = Regex('all (nodes|elements|systems|components)'                      , IGNORECASE)
 CLASSIFICATION = Regex('(?P<classification>confidential|public|restricted)'           , IGNORECASE)
 DATUM          = Regex('dat[ua]m?'                                                    , IGNORECASE)
 EXCEPT         = Regex('[,;]? ?except( for)?'                                         , IGNORECASE)
@@ -44,13 +47,13 @@ RISKING        = Regex(',? ?risking'                                            
 ROLE           = Regex('(?P<role>agent|service|storage)'                              , IGNORECASE)
 TO_FROM        = Regex('[,;]? ?(to|from)'                                             , IGNORECASE)
 VERIFIED       = Regex('(?P<verified>verified|checked)'                               , IGNORECASE)
+WITHIN         = Regex('[,;]? ?(and )?within'                                         , IGNORECASE)
 WITH_NOTES     = Regex('[,;]? ?(with)? ?not(es?|ing) ?(that)?'                        , IGNORECASE)
 
 AGAINST   = CaselessKeyword('against'  )
 ALL_DATA  = CaselessKeyword('all data' )
 AND       = CaselessKeyword('and'      )
 AS        = CaselessKeyword('as'       )
-BETWEEN   = CaselessKeyword('between'  )
 DESCRIBED = CaselessKeyword('described')
 DISPROVE  = CaselessKeyword('disprove' )
 IN        = CaselessKeyword('in'       )
@@ -69,13 +72,20 @@ PATH          = QuotedString('"', escQuote='""').setResultsName('path'         )
 SOURCE_THREAT = QuotedString('"', escQuote='""').setResultsName('source_threat')
 SUBJECT       = QuotedString('"', escQuote='""').setResultsName('subject'      )
 
-ASSUMPTIONS = delimitedList(Group(LABEL) , ',').setResultsName('assumptions')
-EXCEPTIONS  = delimitedList(Group(LABEL) , ',').setResultsName('exceptions' )
-LABEL_LIST  = delimitedList(Group(LABEL) , ',').setResultsName('label_list' )
+ASSUMPTIONS        = delimitedList(Group(LABEL) , ',').setResultsName('assumptions'       )
+DATA_EXCEPTIONS    = delimitedList(Group(LABEL) , ',').setResultsName('data_exceptions'   )
+DATA_LIST          = delimitedList(Group(LABEL) , ',').setResultsName('data_list'         )
+ELEMENT_EXCEPTIONS = delimitedList(Group(LABEL) , ',').setResultsName('element_exceptions')
+ELEMENT_LIST       = delimitedList(Group(LABEL) , ',').setResultsName('element_list'      )
+EXCEPTIONS         = delimitedList(Group(LABEL) , ',').setResultsName('exceptions'        )
+LABEL_LIST         = delimitedList(Group(LABEL) , ',').setResultsName('label_list'        )
+
 THREAT_LIST = delimitedList(Group(LABEL) , ',').setResultsName('threat_list')
 EFFECT = LABEL + Optional(RISKING + THREAT_LIST)
 EFFECT_LIST = delimitedList(Group(EFFECT), ';').setResultsName('effect_list')
-LABEL_PAIR_LIST = delimitedList(Group(LABEL + AND + LABEL) , ',').setResultsName('label_pair_list' )
+
+ELEMENT_PAIR_LIST = delimitedList(Group(LABEL + Suppress(AND) + LABEL) , ',').setResultsName('element_pair_list' )
+ELEMENT_PAIR_EXCEPTIONS = delimitedList(Group(LABEL + Suppress(AND) + LABEL) , ',').setResultsName('element_pair_exceptions' )
 
 def all_combinations(expression_list):
     return [
@@ -121,8 +131,13 @@ constructs = [
         + Optional(WITH_NOTES + NOTES),
     # Mitigation
     LABEL + (IMPERATIVE ^ HAS) + BE + (IMPLEMENTED ^ VERIFIED)
-        + ON + (LABEL_LIST ^ (ALL_DATA + Optional(EXCEPT + LABEL_LIST)))
-        + BETWEEN + (LABEL_PAIR_LIST ^ (ALL_NODES + Optional(EXCEPT + LABEL_PAIR_LIST)))
+        + ON + (DATA_LIST ^ (ALL_DATA + Optional(EXCEPT + DATA_EXCEPTIONS)))
+        + OneOrMore(
+            MatchFirst([
+                BETWEEN + (ELEMENT_PAIR_LIST ^ (ALL_NODES + Optional(EXCEPT + ELEMENT_PAIR_EXCEPTIONS))),
+                WITHIN + (ELEMENT_LIST ^ (ALL_NODES + Optional(EXCEPT + ELEMENT_EXCEPTIONS)))
+            ])
+        )
 ]
 
 # This allows commenting out lines in the threat model file.
