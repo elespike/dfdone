@@ -16,12 +16,8 @@ class Role(Enum):
 
 
 class Profile(Enum):
-    # Black box, zero control or visibility; e.g., user agent.
     BLACK = 'black'
-    # Grey box, partial control or visibility; e.g., 3rd-party or another team's service.
-    # Can also be used to signify an element that's out of scope for the current TM.
     GREY = 'grey'
-    # White box, full control or visibility; e.g., owned or open-source service.
     WHITE = 'white'
 
 
@@ -74,3 +70,8 @@ class Status(IntEnum):
     IMPLEMENTED = 1
     VERIFIED = 2
 
+
+def get_property(name, source_enum):
+    for prop in source_enum:
+        if name.upper() == prop.name:
+            return prop

@@ -1,14 +1,9 @@
-from collections import defaultdict as ddict, namedtuple
-
-from .enums import (
+from dfdone.enums import (
     Action,
     Classification,
-    Impact,
     Imperative,
     Probability,
-    Profile,
     Risk,
-    Role,
     Status,
 )
 
@@ -40,12 +35,27 @@ class Interaction:
         self.source = source
         self.target = target
 
-        if type(data_threats) == Datum:
-            data_threats = list(data_threats)
-        if type(data_threats) == list:
-            data_threats = {d: list() for d in data_threats}
-        self.data_threats = data_threats
+        # TODO confirm the following is no longer needed
+        # if type(data_threats) == Datum:
+            # data_threats = list(data_threats)
+        # if type(data_threats) == list:
+            # data_threats = {d: list() for d in data_threats}
 
+        # Sort by data classification, high to low:
+        data_threats = {
+            k: v for k, v in sorted(
+                data_threats.items(),
+                key=lambda t: t[0].classification,
+                reverse=True
+            )
+        }
+        for d in data_threats:
+            # data_threats is already sorted by classification,
+            # so its first item has the highest classification.
+            self.highest_classification = d.classification
+            break
+
+        self.data_threats = data_threats
         self.broad_threats = broad_threats
 
         self.notes = notes

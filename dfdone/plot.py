@@ -1,10 +1,10 @@
-import re
-
 from collections import defaultdict as ddict
 from graphviz import Digraph
 
-from .components import Datum, Element, Interaction
-from .enums import Profile, Role, Risk, Classification
+from dfdone.enums import (
+    Profile,
+    Role,
+)
 
 
 default_style = '''
@@ -196,10 +196,7 @@ def build_interaction_table(interactions):
         ))
 
         di = 0
-        highest_classification = Classification.PUBLIC
         for datum, threats in interaction.data_threats.items():
-            if datum.classification > highest_classification:
-                highest_classification = datum.classification
             if di > 0:
                 interaction_table.append('<tr>')
             interaction_table.append('<td><div class="label data-label classification-{}"><a href="#{}">{}</a></div></td>'.format(
@@ -226,7 +223,7 @@ def build_interaction_table(interactions):
                     interaction_table.append('<td rowspan="{}">{}</td>'.format(
                         interaction_rowspan,
                         ''.join(['<div class="label threat-label risk-{}"><a href="#{}">{}</a></div>'.format(
-                            t.calculate_risk(highest_classification).name.lower(),
+                            t.calculate_risk(interaction.highest_classification).name.lower(),
                             id_format(t.label),
                             t.label
                         ) for t in interaction.broad_threats])

@@ -2,6 +2,7 @@ from os.path import isfile
 
 import click
 
+from dfdone import component_generators as cg
 from dfdone import plot
 from dfdone.tml.parser import Parser
 
@@ -13,7 +14,7 @@ def main(model):
         tml_parser = Parser(model)
     # TODO else print error and exit.
 
-    elements = tml_parser.yield_elements()
+    elements = cg.yield_elements(tml_parser.components)
     if elements:
         html = ''
 
@@ -23,10 +24,13 @@ def main(model):
         if tml_parser.assumptions:
             html += plot.build_assumption_table(tml_parser.assumptions)
 
-        html += plot.build_data_table(tml_parser.yield_data())
-        html += plot.build_threat_table(tml_parser.yield_threats())
+        data = cg.yield_data(tml_parser.components)
+        threats = cg.yield_threats(tml_parser.components)
+        interactions = cg.yield_interactions(tml_parser.components)
+
+        html += plot.build_data_table(data)
+        html += plot.build_threat_table(threats)
         html += plot.build_diagram(elements)
-        html += plot.build_interaction_table(tml_parser.yield_interactions())
+        html += plot.build_interaction_table(interactions)
         print(html)
     # TODO else print error and exit.
-
