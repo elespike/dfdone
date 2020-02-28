@@ -66,9 +66,10 @@ class Capability(IntEnum):
 
 @unique
 class Status(IntEnum):
-    PENDING = 0
-    IMPLEMENTED = 1
-    VERIFIED = 2
+    NONE = 0
+    PENDING = 1
+    IMPLEMENTED = 2
+    VERIFIED = 3
 
 
 def get_property(name, source_enum):

@@ -226,7 +226,7 @@ all_tests.append(interaction_tests)
 mitigation_components = [
     # Label
     ['"Input ""validation"""'],
-    ['must', 'should', 'has', 'have'],
+    ['must', 'should', 'may', 'has', 'have'],
     ['be', 'been'],
     ['implemented', 'applied', 'deployed', 'verified', 'checked'],
     ['on "username"', 'on "username", "password"', 'on all data', 'on all data except "username"', 'on all data except "username", "password"'],

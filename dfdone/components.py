@@ -35,12 +35,6 @@ class Interaction:
         self.source = source
         self.target = target
 
-        # TODO confirm the following is no longer needed
-        # if type(data_threats) == Datum:
-            # data_threats = list(data_threats)
-        # if type(data_threats) == list:
-            # data_threats = {d: list() for d in data_threats}
-
         # Sort by data classification, high to low:
         data_threats = {
             k: v for k, v in sorted(
@@ -112,6 +106,7 @@ class Threat(Component):
     def __init__(self, label, impact, probability, description):
         super().__init__(label, description)
         self.impact, self.probability = impact, probability
+        self.active = False
         self.measures = set()
         self.mitigated = False
 
@@ -139,5 +134,5 @@ class Measure(Component):
         super().__init__(label, description)
         self.capability = capability
         self.imperative = Imperative.MUST
-        self.status = Status.PENDING
+        self.status = Status.NONE
 

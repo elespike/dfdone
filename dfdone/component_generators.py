@@ -24,7 +24,7 @@ def yield_data(components):
 def yield_threats(components):
     threats = (
         v for v in components.values()
-        if isinstance(v, Threat)
+        if isinstance(v, Threat) and v.active
     )
     return (
         t for t in sorted(

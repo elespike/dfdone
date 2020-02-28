@@ -19,7 +19,8 @@ def main(model):
         html = ''
 
         # TODO if specified by an arg
-        html += plot.default_style
+        with open('dfdone/static/default.css') as f:
+            html += '<style>\n{}\n</style>'.format(f.read())
 
         if tml_parser.assumptions:
             html += plot.build_assumption_table(tml_parser.assumptions)
