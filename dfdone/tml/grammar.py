@@ -155,5 +155,5 @@ if __name__ == '__main__':
         count += len(t)
         test_grammar(c, t)  # exits if unsuccessful
     # TODO convert to logging, when logging exists
-    print('[+] {} grammar tests successful!'.format(count))
+    print(F'[+] {count} grammar tests successful!')
 

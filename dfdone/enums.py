@@ -1,12 +1,11 @@
-# TODO upgrade to latest python? would also be able to use F-strings and enum.auto.
-from enum import Enum, IntEnum, unique
+from enum import Enum, IntEnum, auto, unique
 
 
 @unique
 class Classification(IntEnum):
-    PUBLIC = 1
-    RESTRICTED = 2
-    CONFIDENTIAL = 3
+    PUBLIC = auto()
+    RESTRICTED = auto()
+    CONFIDENTIAL = auto()
 
 
 class Role(Enum):
@@ -30,31 +29,30 @@ class Action(Enum):
 
 @unique
 class Impact(IntEnum):
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
+    LOW = auto()
+    MEDIUM = auto()
+    HIGH = auto()
 
 
 @unique
 class Probability(IntEnum):
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
+    LOW = auto()
+    MEDIUM = auto()
+    HIGH = auto()
 
 
 @unique
 class Risk(IntEnum):
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
+    LOW = auto()
+    MEDIUM = auto()
+    HIGH = auto()
 
 
-@unique
-class Imperative(IntEnum):
-    MUST = 0
-    SHOULD = 1
-    MAY = 2
-    NONE = 3
+class Imperative(Enum):
+    NONE = 'none'
+    MAY = 'may'
+    SHOULD = 'should'
+    MUST = 'must'
 
 
 @unique
@@ -64,12 +62,10 @@ class Capability(IntEnum):
     FULL = 2
 
 
-@unique
-class Status(IntEnum):
-    NONE = 0
-    PENDING = 1
-    IMPLEMENTED = 2
-    VERIFIED = 3
+class Status(Enum):
+    PENDING = 'pending'
+    IMPLEMENTED = 'implemented'
+    VERIFIED = 'verified'
 
 
 def get_property(name, source_enum):

@@ -1,4 +1,4 @@
-from copy import copy
+from copy import copy, deepcopy
 from itertools import combinations
 from pathlib import Path
 
@@ -196,9 +196,8 @@ class Parser:
         )
         self.components[parsed_result.label] = measure
         for threat in self.compile_components(parsed_result.threat_list):
-            # Using copy() because each mitigation application
-            # should modify its own instance of Measure.
-            threat.measures.add(copy(measure))
+            threat._measures.add(measure)
+            measure._threats.add(threat)
 
     @staticmethod
     def modify_component(parsed_result, component):
@@ -257,9 +256,10 @@ class Parser:
         for d in self.compile_components([effect.label]):
             threats = self.compile_components(effect.threat_list)
             data_threats[d] = [
-                # Using copy() because each mitigation application
-                # should modify its own instance of Threat.
-                copy(t) for t in threats
+                # Using deepcopy() because each mitigation application
+                # should modify its own instance of Threat as well as
+                # its own instances of Threat._measures.
+                deepcopy(t) for t in threats
             ]
             for t in threats:
                 t.active = True
@@ -267,9 +267,10 @@ class Parser:
     def build_broad_threats(self, threat_list):
         threats = self.compile_components(threat_list)
         broad_threats = [
-            # Using copy() because each mitigation application
-            # should modify its own instance of Threat.
-            copy(t) for t in threats
+            # Using deepcopy() because each mitigation application
+            # should modify its own instance of Threat as well as
+            # its own instances of Threat._measures.
+            deepcopy(t) for t in threats
         ]
         for t in threats:
             t.active = True
@@ -293,7 +294,7 @@ class Parser:
 
     def apply_measures(self, parsed_result):
         measure_labels = set(
-            [c.label for c in self.compile_components([parsed_result.label])]
+            c.label for c in self.compile_components([parsed_result.label])
         )
         affected_pairs = self.compile_element_pairs(
             parsed_result.element_list,
@@ -327,27 +328,23 @@ class Parser:
             affected_data = set(yield_data(self.components))
             affected_data = affected_data.difference(set(exempt_data))
 
-        affected_measures = set()
         for i in affected_interactions:
             for data, threats in i.data_threats.items():
                 if data not in affected_data:
                     continue
                 Parser.mitigate_threats(
                     threats,
-                    affected_measures,
                     measure_labels,
-                    data.classification
+                    data.classification,
+                    parsed_result
                 )
             if all(data in affected_data for data in i.data_threats):
                 Parser.mitigate_threats(
                     i.broad_threats,
-                    affected_measures,
                     measure_labels,
-                    i.highest_classification
+                    i.highest_classification,
+                    parsed_result
                 )
-
-        for measure in affected_measures:
-            Parser.set_measure_properties(measure, parsed_result)
 
     def compile_element_pairs(self, element_list, element_pair_list):
         pairs = list()
@@ -369,11 +366,12 @@ class Parser:
         return pairs
 
     @staticmethod
-    def mitigate_threats(threats, measures, measure_labels, classification):
+    def mitigate_threats(threats, measure_labels, classification, parsed_result):
         for threat in threats:
             for measure in threat.measures:
                 if measure.label in measure_labels:
-                    measures.add(measure)
+                    Parser.set_measure_properties(measure, parsed_result)
+                if measure.status == Status.VERIFIED:
                     threat.mitigated = True
         threats.sort(
             key=lambda t: t.calculate_risk(classification),
@@ -382,6 +380,7 @@ class Parser:
 
     @staticmethod
     def set_measure_properties(measure, parsed_result):
+        measure.active = True
         if parsed_result.imperative:
             measure.imperative = get_property(
                 parsed_result.imperative,

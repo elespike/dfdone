@@ -18,6 +18,10 @@ div.data-label {
 }
 div.threat-label {
 }
+div.mitigation-label {
+  margin-left: 12px;
+  padding-left: 6px;
+}
 
 div.description {
 }
@@ -44,19 +48,52 @@ div.interaction-notes {
 div.classification-public {
 }
 div.classification-restricted {
+  font-style: italic;
 }
 div.classification-confidential {
+  font-weight: bold;
 }
 
 div.risk-low {
-  background: khaki;
+  background-color: Khaki;
 }
 div.risk-medium {
-  background: sandybrown;
+  background-color: SandyBrown;
 }
 div.risk-high {
-  background: tomato;
+  background-color: Tomato;
+}
+
+div.imperative-none {
+}
+div.imperative-may {
+}
+div.imperative-should {
+  font-style: italic;
+}
+div.imperative-must {
+  font-weight: bold;
+}
+
+div.capability-detective {
+  background-color: LightSkyBlue;
+}
+div.capability-partial {
+  background: #c2e184;
+}
+div.capability-full {
+  background: LimeGreen;
+}
+
+div.status-pending {
+  background-image: linear-gradient(to right, rgba(0,0,0,0), rgba(255,255,255,0.9) 25%);
+}
+div.status-implemented {
+  background-image: linear-gradient(to right, rgba(0,0,0,0), rgba(255,255,255,0.9) 75%);
+}
+div.status-verified {
 }
 
 div.dash {
+  text-align: center;
 }

@@ -18,7 +18,7 @@ class Component:
 
     def __str__(self):
         if self.description:
-            return '{}: {}'.format(self.label, self.description)
+            return F'{self.label}: {self.description}'
         return self.label
 
 
@@ -64,15 +64,12 @@ class Element(Component):
 
     def __init__(self, label, profile, role, group, description):
         super().__init__(label, description)
-
         self.role = role
         self.profile = profile
         self.group = group
 
         self.interactions = list()
 
-        # TODO not needed?
-        # self.index = Element.global_index
         Element.global_index += 1
 
     @staticmethod
@@ -107,8 +104,17 @@ class Threat(Component):
         super().__init__(label, description)
         self.impact, self.probability = impact, probability
         self.active = False
-        self.measures = set()
+        self._measures = set()
         self.mitigated = False
+
+    @property
+    def measures(self):
+        __measures = sorted(self._measures, key=lambda m: m.label)
+        __measures.sort(
+            key=lambda m: [m.capability, m.imperative, m.status],
+            reverse=True
+        )
+        return (__measures)
 
     # Defauting to Classification.RESTRICTED effectively means that
     # only impact and probability will be significant in the calculation.
@@ -133,6 +139,16 @@ class Measure(Component):
     def __init__(self, label, capability, description):
         super().__init__(label, description)
         self.capability = capability
+        self.active = False
+        self._threats = set()
         self.imperative = Imperative.MUST
-        self.status = Status.NONE
+        self.status = Status.PENDING
 
+    @property
+    def threats(self):
+        __threats = sorted(self._threats, key=lambda t: t.label)
+        __threats.sort(
+            key=lambda t: t.calculate_risk(),
+            reverse=True
+        )
+        return (__threats)

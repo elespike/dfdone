@@ -11,65 +11,34 @@ def yield_elements(components):
 
 
 def yield_data(components):
-    data = (v for v in components.values() if isinstance(v, Datum))
-    return (
-        d for d in sorted(
-            data,
-            key=lambda _d: _d.classification,
-            reverse=True
-        )
-    )
+    data = [v for v in components.values() if isinstance(v, Datum)]
+    data.sort(key=lambda d: d.label)
+    data.sort(key=lambda d: d.classification, reverse=True)
+    return (data)
 
 
 def yield_threats(components):
-    threats = (
+    threats = [
         v for v in components.values()
         if isinstance(v, Threat) and v.active
-    )
-    return (
-        t for t in sorted(
-            threats,
-            key=lambda _t: _t.calculate_risk(),
-            reverse=True
-        )
-    )
+    ]
+    threats.sort(key=lambda t: t.label)
+    threats.sort(key=lambda t: t.calculate_risk(), reverse=True)
+    return (threats)
 
 
 def yield_measures(components):
-    measures = (
+    measures = [
         v for v in components.values()
         if isinstance(v, Measure)
-    )
-    return (
-        m for m in sorted(
-            measures,
-            key=lambda _m: _m.imperative
-        )
-    )
+    ]
+    measures.sort(key=lambda m: m.label)
+    measures.sort(key=lambda m: m.capability, reverse=True)
+    return (measures)
 
 
 def yield_interactions(components):
     return (
         i for e in yield_elements(components)
         for i in e.interactions
-    )
-
-
-# TODO verify this is not needed
-def yield_interaction_threats(components):
-    interaction_threats = set()
-    for i in yield_interactions():
-        for threats in i.data_threats.values():
-            for t in threats:
-                interaction_threats.add(t)
-        for t in i.generic_threats:
-            interaction_threats.add(t)
-    return (t for t in sorted(interaction_threats, key=lambda t: t.label))
-
-
-# TODO verify this is not needed
-def yield_interaction_measures(components):
-    return (
-        m for t in yield_interaction_threats()
-        for m in t.measures
     )

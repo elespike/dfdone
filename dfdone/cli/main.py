@@ -20,17 +20,19 @@ def main(model):
 
         # TODO if specified by an arg
         with open('dfdone/static/default.css') as f:
-            html += '<style>\n{}\n</style>'.format(f.read())
+            html += F'<style>\n{f.read()}\n</style>'
 
         if tml_parser.assumptions:
             html += plot.build_assumption_table(tml_parser.assumptions)
 
         data = cg.yield_data(tml_parser.components)
         threats = cg.yield_threats(tml_parser.components)
+        measures = cg.yield_measures(tml_parser.components)
         interactions = cg.yield_interactions(tml_parser.components)
 
         html += plot.build_data_table(data)
         html += plot.build_threat_table(threats)
+        html += plot.build_measure_table(measures)
         html += plot.build_diagram(elements)
         html += plot.build_interaction_table(interactions)
         print(html)
