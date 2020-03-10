@@ -8,7 +8,9 @@ setup(
     license='',
     author='Auth0',
     author_email='security@auth0.com',
-    description='Python framework to generate threat models from natural language.',
+    description=(
+        'Python framework to generate threat models from natural language.'
+    ),
     install_requires=[
         'Click',
         'graphviz',

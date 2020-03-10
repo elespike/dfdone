@@ -24,7 +24,8 @@ element_components = [
     # Articles
     ['a', 'an', 'the'],
     # Profiles
-    ['white box', 'grey box', 'gray box', 'black box', 'white-box', 'grey-box', 'gray-box', 'black-box'],
+    ['white box', 'grey box', 'gray box', 'black box',
+     'white-box', 'grey-box', 'gray-box', 'black-box'],
     # Roles
     ['agent', 'service', 'storage'],
     # Group
@@ -119,7 +120,9 @@ meta_modifications = [
     ['labeled', 'described as'],
     ['"exactly what it ""seems"""']
 ]
-modification_tests.extend([' '.join(p) for p in product(*meta_modifications)])
+modification_tests.extend(
+    [' '.join(p) for p in product(*meta_modifications)]
+)
 
 element_modifications = [
     # Label
@@ -137,7 +140,9 @@ element_modifications = [
     # Description
     ['', 'described as "exactly what it ""seems"""']
 ]
-modification_tests.extend([' '.join(p) for p in product(*element_modifications)])
+modification_tests.extend(
+    [' '.join(p) for p in product(*element_modifications)]
+)
 
 datum_modifications = [
     # Label
@@ -155,7 +160,9 @@ datum_modifications = [
     # Description
     ['', 'described as "exactly what it ""seems"""']
 ]
-modification_tests.extend([' '.join(p) for p in product(*datum_modifications)])
+modification_tests.extend(
+    [' '.join(p) for p in product(*datum_modifications)]
+)
 
 threat_modifications = [
     # Label
@@ -173,7 +180,9 @@ threat_modifications = [
     # Description
     ['', 'described as "exactly what it ""seems"""']
 ]
-modification_tests.extend([' '.join(p) for p in product(*threat_modifications)])
+modification_tests.extend(
+    [' '.join(p) for p in product(*threat_modifications)]
+)
 
 measure_modifications = [
     # Label
@@ -193,10 +202,13 @@ measure_modifications = [
     # Description
     ['', 'described as "exactly what it ""seems"""']
 ]
-modification_tests.extend([' '.join(p) for p in product(*threat_modifications)])
+modification_tests.extend(
+    [' '.join(p) for p in product(*threat_modifications)]
+)
 all_tests.append(modification_tests)
 
-disprove_tests = ['disprove "No transport security!"', 'disprove "bad1", "bad2", "bad3"']
+disprove_tests = ['disprove "No transport security!"',
+                  'disprove "bad1", "bad2", "bad3"']
 all_tests.append(disprove_tests)
 
 interaction_components = [
@@ -208,7 +220,11 @@ interaction_components = [
     ['laterally'],
     ['sends', 'receives', 'stores'],
     # Effect list
-    ['"Datum ""One""", risking "XSS", "CSRF"; "Data ""Two""" risking "SSRF"; "Data 3"'],
+    [(
+        '"Datum ""One""", risking "XSS", "CSRF"; '
+        '"Data ""Two""" risking "SSRF"; '
+        '"Data 3"'
+    )],
     # Literals 'to' or 'from'
     ['to', 'from'],
     # Object
@@ -229,9 +245,14 @@ mitigation_components = [
     ['must', 'should', 'may', 'has', 'have'],
     ['be', 'been'],
     ['implemented', 'applied', 'deployed', 'verified', 'checked'],
-    ['on "username"', 'on "username", "password"', 'on all data', 'on all data except "username"', 'on all data except "username", "password"'],
-    ['between "User" and "Web", "Web" and "DB"', 'between all nodes except "User" and "Web", "Web" and "DB"', 'within "User", "Web"', 'within all nodes except "User"', 'within all nodes except "User", "Web"', 'between "User" and "Web", and within "DB"'],
+    ['on "username"', 'on "username", "password"',
+     'on all data', 'on all data except "username"',
+     'on all data except "username", "password"'],
+    ['between "User" and "Web", "Web" and "DB"',
+     'between all nodes except "User" and "Web", "Web" and "DB"',
+     'within "User", "Web"', 'within all nodes except "User"',
+     'within all nodes except "User", "Web"',
+     'between "User" and "Web", and within "DB"'],
 ]
 mitigation_tests = [' '.join(p) for p in product(*mitigation_components)]
 all_tests.append(mitigation_tests)
-

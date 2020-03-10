@@ -3,19 +3,19 @@ from re import IGNORECASE
 from sys import exit as sys_exit
 
 from pyparsing import (
-    And            ,
+    And,
     CaselessKeyword,
-    Group          ,
-    Literal        ,
-    MatchFirst     ,
-    OneOrMore      ,
-    Optional       ,
-    Or             ,
-    ParseException ,
-    QuotedString   ,
-    Regex          ,
-    Suppress       ,
-    delimitedList  ,
+    Group,
+    Literal,
+    MatchFirst,
+    OneOrMore,
+    Optional,
+    Or,
+    ParseException,
+    QuotedString,
+    Regex,
+    Suppress,
+    delimitedList,
     lineStart
 )
 
@@ -87,26 +87,37 @@ EFFECT_LIST = delimitedList(Group(EFFECT), ';').setResultsName('effect_list')
 ELEMENT_PAIR_LIST = delimitedList(Group(LABEL + Suppress(AND) + LABEL) , ',').setResultsName('element_pair_list' )
 ELEMENT_PAIR_EXCEPTIONS = delimitedList(Group(LABEL + Suppress(AND) + LABEL) , ',').setResultsName('element_pair_exceptions' )
 
+
 def all_combinations(expression_list):
     return [
         And(exp) for i in range(1, len(expression_list) + 1)
         for exp in combinations(expression_list, i)
     ]
 
-# The ordering of this list matters!
+
+# The ordering of the 'constructs' list matters!
 # Construct definitions (e.g., LABEL + IS_A) should come after INCLUDE.
-# Furthermore, the order of this list must match the order of dfdone.parser.grammar_tests.all_tests.
+# Furthermore, the order of this list must match
+# the order of dfdone.parser.grammar_tests.all_tests.
 constructs = [
     # Parse additional files
-    INCLUDE + PATH + Optional((AS | IN) + LABEL + Optional(EXCEPT + EXCEPTIONS)),
+    INCLUDE + PATH
+    + Optional(
+        (AS | IN) + LABEL + Optional(EXCEPT + EXCEPTIONS)
+    ),
     # Element
-    LABEL + IS_A + PROFILE + ROLE + Optional(IN + GROUP) + Optional(DESCRIBED + AS + DESCRIPTION),
+    LABEL + IS_A + PROFILE + ROLE
+    + Optional(IN + GROUP)
+    + Optional(DESCRIBED + AS + DESCRIPTION),
     # Datum
-    LABEL + IS_A + CLASSIFICATION + DATUM + Optional(DESCRIBED + AS + DESCRIPTION),
+    LABEL + IS_A + CLASSIFICATION + DATUM
+    + Optional(DESCRIBED + AS + DESCRIPTION),
     # Threat
-    LABEL + IS_A + IMPACT + PROBABILITY + THREAT + Optional(DESCRIBED + AS + DESCRIPTION),
+    LABEL + IS_A + IMPACT + PROBABILITY + THREAT
+    + Optional(DESCRIBED + AS + DESCRIPTION),
     # Security Measure
-    LABEL + IS_A + CAPABILITY + MEASURE + AGAINST + THREAT_LIST + Optional(DESCRIBED + AS + DESCRIPTION),
+    LABEL + IS_A + CAPABILITY + MEASURE + AGAINST + THREAT_LIST
+    + Optional(DESCRIBED + AS + DESCRIPTION),
     # Label list or alias
     LABEL + IS_A + LABEL_LIST,
     # Component modification
@@ -120,24 +131,30 @@ constructs = [
             CAPABILITY + MEASURE ^ MEASURE + AGAINST + THREAT_LIST,
         ]) + Optional(DESCRIBED + AS + DESCRIPTION)
     ]),
-    # These are negative assumptions; i.e, anti-patterns which must be disproven.
+    # These are negative assumptions: anti-patterns which must be disproven.
     # E.g., disprove "lack of transport security".
     # Negative assumptions which have not been disproven should incur risk.
     DISPROVE + ASSUMPTIONS,
     # Interaction
     Optional(ORDINAL) + SUBJECT + Optional(LATERALLY) + ACTION + EFFECT_LIST
-        + Optional(TO_FROM + OBJECT)
-        + Optional(Optional(BROADLY) + RISKING + THREAT_LIST)
-        + Optional(WITH_NOTES + NOTES),
+    + Optional(TO_FROM + OBJECT)
+    + Optional(Optional(BROADLY) + RISKING + THREAT_LIST)
+    + Optional(WITH_NOTES + NOTES),
     # Mitigation
     LABEL + (IMPERATIVE ^ HAS) + BE + (IMPLEMENTED ^ VERIFIED)
-        + ON + (DATA_LIST ^ (ALL_DATA + Optional(EXCEPT + DATA_EXCEPTIONS)))
-        + OneOrMore(
-            MatchFirst([
-                BETWEEN + (ELEMENT_PAIR_LIST ^ (ALL_NODES + Optional(EXCEPT + ELEMENT_PAIR_EXCEPTIONS))),
-                WITHIN + (ELEMENT_LIST ^ (ALL_NODES + Optional(EXCEPT + ELEMENT_EXCEPTIONS)))
-            ])
-        )
+    + ON + (DATA_LIST ^ (ALL_DATA + Optional(EXCEPT + DATA_EXCEPTIONS)))
+    + OneOrMore(
+        MatchFirst([
+            BETWEEN + (
+                ELEMENT_PAIR_LIST
+                ^ (ALL_NODES + Optional(EXCEPT + ELEMENT_PAIR_EXCEPTIONS))
+            ),
+            WITHIN + (
+                ELEMENT_LIST
+                ^ (ALL_NODES + Optional(EXCEPT + ELEMENT_EXCEPTIONS))
+            )
+        ])
+    )
 ]
 
 # This allows commenting out lines in the threat model file.
@@ -156,4 +173,3 @@ if __name__ == '__main__':
         test_grammar(c, t)  # exits if unsuccessful
     # TODO convert to logging, when logging exists
     print(F'[+] {count} grammar tests successful!')
-
