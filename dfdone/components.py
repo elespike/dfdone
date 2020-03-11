@@ -115,7 +115,6 @@ class Threat(Component):
         self.impact, self.probability = impact, probability
         self.active = False
         self._measures = set()
-        self.mitigated = False
 
     @property
     def measures(self):
@@ -129,14 +128,15 @@ class Threat(Component):
     # Defauting to Classification.RESTRICTED effectively means that
     # only impact and probability will be significant in the calculation.
     def calculate_risk(self, classification=Classification.RESTRICTED):
-        if self.mitigated:
-            for m in self.measures:
-                # TODO this turns self.probability into an int,
-                # might be good to assign it back to its corresponding Probability IntEnum.
-                self.probability -= m.capability
-                if self.probability < Probability.LOW:
-                    self.probability = Probability.LOW
-                    break
+        for m in self.measures:
+            if m.status != Status.VERIFIED:
+                continue
+            # TODO this turns self.probability into an int,
+            # might be good to assign it back to its corresponding Probability IntEnum.
+            self.probability -= m.capability
+            if self.probability < Probability.LOW:
+                self.probability = Probability.LOW
+                break
         r = (self.impact + self.probability + classification) / 3
         if r < Risk.MEDIUM:
             return Risk.LOW

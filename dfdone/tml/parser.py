@@ -371,8 +371,6 @@ class Parser:
             for measure in threat.measures:
                 if measure.label in measure_labels:
                     Parser.set_measure_properties(measure, parsed_result)
-                if measure.status == Status.VERIFIED:
-                    threat.mitigated = True
         threats.sort(
             key=lambda t: t.calculate_risk(classification),
             reverse=True
