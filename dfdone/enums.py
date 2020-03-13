@@ -48,24 +48,28 @@ class Risk(IntEnum):
     HIGH = auto()
 
 
-class Imperative(Enum):
-    NONE = 'none'
-    MAY = 'may'
-    SHOULD = 'should'
-    MUST = 'must'
+# Using IntEnum to be able to easily sort by Imperative.
+class Imperative(IntEnum):
+    NONE = auto()
+    MAY = auto()
+    SHOULD = auto()
+    MUST = auto()
 
 
 @unique
 class Capability(IntEnum):
+    # Detective measures should have a value of 0
+    # in order to have zero impact on risk calculations.
     DETECTIVE = 0
-    PARTIAL = 1
-    FULL = 2
+    PARTIAL = auto()
+    FULL = auto()
 
 
-class Status(Enum):
-    PENDING = 'pending'
-    IMPLEMENTED = 'implemented'
-    VERIFIED = 'verified'
+# Using IntEnum to be able to easily sort by Status.
+class Status(IntEnum):
+    PENDING = auto()
+    IMPLEMENTED = auto()
+    VERIFIED = auto()
 
 
 def get_property(name, source_enum):

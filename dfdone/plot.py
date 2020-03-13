@@ -190,9 +190,9 @@ def build_threats_cell(threats, classification, interaction_table, rowspan=1):
                 continue
             interaction_table.append((
                 '<div class="label mitigation-label '
-                F'imperative-{m.imperative.value} '
+                F'imperative-{m.imperative.name.lower()} '
                 F'capability-{m.capability.name.lower()} '
-                F'status-{m.status.value}">'
+                F'status-{m.status.name.lower()}">'
                 F'<a href="#{id_format(m.label)}">{m.label}</a></div>'
             ))
     interaction_table.append('</td>')
