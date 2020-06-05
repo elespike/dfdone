@@ -1,0 +1,117 @@
+# All lines starting with "#" will be ignored by DFDone. You can actually use other symbols too.
+
+##############################
+# Including Other .tml Files #
+##############################
+
+# You can include other files like so:
+Include "sample_threats.tml" as "injection", except for "Information Disclosure"
+# This will make all entities from the included file available in this file.
+
+# In the above example, the construct 'as "injection"' is optional;
+#   it simply creates an alias for use in the tml file.
+# The "except" construct only excludes items from the "injection" group/alias;
+#   in other words, "Information Disclosure" will still be available for use
+#   in this file, but it will not be part of the "injection" group/alias.
+
+
+###############
+# Assumptions #
+###############
+
+# In DFDone, assumptions are no different than threats
+#   because assumptions that aren't validated carry full risk.
+# Define them like you would define threats:
+"Lack of TLS" is a high impact, high probability threat
+"Improper Error Handling" is a medium impact, medium probability threat
+
+# The "Disprove" construct adds threats to the assumption table for validation.
+Disprove "Lack of TLS", "Improper Error Handling"
+
+
+####################
+# Diagram Elements #
+####################
+
+# Diagram elements can be white/black/grey-box and agent/service/storage:
+"User" is a black-box agent
+"Web App" is a white-box service
+"DB" is a white-box storage
+
+
+########
+# Data #
+########
+
+# Data can be public, restricted or confidential:
+"un" is public data
+"pw" is confidential data
+"session cookie" is restricted data
+
+# Optional grouping has no effect on the diagram;
+#   it simply allows for shortcuts in this file.
+"backend" is "Web App", "DB"
+"creds" are "un", "pw"
+
+
+###########
+# Threats #
+###########
+
+# See sample_threats.tml.
+
+
+#####################
+# Security Measures #
+#####################
+
+# Security measures can be full/partial/detective,
+#   and can apply to one or many threats, or threat groups:
+"Input Validation" is a full measure against "injection"
+    described as "Click for more info"
+"Parameterized Queries" are a full measure against "sqli"
+"Blocking WAF" is a partial measure against "injection" described as "WAF in blocking mode"
+"Learning WAF" is a detective measure against "injection" described as "WAF in learning mode"
+
+# Once again, optional alias has no effect on the diagram:
+"inpval" is "Input Validation"
+
+
+########################
+# Diagram Interactions #
+########################
+
+# Diagram interactions can be send/receive/process/store.
+# Threats can apply to specific data or the entire interaction.
+# Refer to sample_threats.tml for threat details.
+
+# Specific threats applied to specific data:
+"User" sends "un", risking "xss"; "pw", risking "cmdi"; to "Web App".
+
+# Threats applied to entire interaction:
+"Web App" sends "creds" to "DB", risking "sqli".
+"User" receives "session cookie" from "Web App", risking "Information Disclosure".
+
+
+########################
+# Security Mitigations #
+########################
+
+# Mitigations are security measures applied to interactions.
+
+# Keywords:
+# must - results in bold formatting
+# should - results in italics formatting
+# may - no formatting change
+
+# Mitigations can apply to all or specific data between pairs of elements.
+# They will only reduce the likelihood (not severity) of affected threats,
+#   and only when they have been marked as verified; e.g.:
+#   "mitigation" has been verified on...
+
+"inpval" must be implemented on all data between "User" and "Web App".
+"Parameterized Queries" must be implemented on all data between "Web App" and "DB".
+# Maybe the WAF is only good for XSS, and is already in place but we should double-check:
+"Blocking WAF" should be verified on "un" between "User" and "Web App".
+# Even less of a requirement; would be nice to see if the WAF works for server-side injection:
+"Learning WAF" may be implemented on "pw" between "User" and "Web App".
