@@ -1,0 +1,18 @@
+# Threats can be high/medium/low impact/severity,
+#   and high/medium/low probability/likelihood.
+
+"Cross-Site Scripting" is a high impact, high probability threat
+# Optional alias, has no effect on the diagram;
+#   it simply allows for shortcuts in this file,
+#   or in other files that have included this file.
+"xss" is "Cross-Site Scripting"
+
+"Database Injection" is a high impact, high probability threat
+# Alias
+"sqli" is "Database Injection"
+
+"Command Injection" is a high impact, high probability threat
+# Alias
+"cmdi" is "Command Injection"
+
+"Information Disclosure" is a high impact, low probability threat
