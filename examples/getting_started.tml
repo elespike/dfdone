@@ -68,7 +68,7 @@ Disprove "Lack of TLS", "Improper Error Handling"
 # Security measures can be full/partial/detective,
 #   and can apply to one or many threats, or threat groups:
 "Input Validation" is a full measure against "injection"
-    described as "Click for more info"
+    described as "<a href=""https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html"">Click for more info</a>"
 "Parameterized Queries" are a full measure against "sqli"
 "Blocking WAF" is a partial measure against "injection" described as "WAF in blocking mode"
 "Learning WAF" is a detective measure against "injection" described as "WAF in learning mode"
