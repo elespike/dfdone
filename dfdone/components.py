@@ -131,9 +131,7 @@ class Threat(Component):
         for m in self.measures:
             if m.status != Status.VERIFIED:
                 continue
-            # TODO this turns self.probability into an int,
-            # might be good to assign it back to its corresponding Probability IntEnum.
-            self.probability -= m.capability
+            self.probability = Probability(self.probability - m.capability)
             if self.probability < Probability.LOW:
                 self.probability = Probability.LOW
                 break

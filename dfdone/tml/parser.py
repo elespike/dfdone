@@ -34,7 +34,7 @@ class Parser:
         self.component_groups = dict()
 
         self.path = fpath
-        self.exercise_directives(self.path, Parser.parse_file(self.path))
+        self.exercise_directives(Parser.parse_file(self.path))
 
     @staticmethod
     def parse_file(fpath):
@@ -66,7 +66,7 @@ class Parser:
             types.add(type(c))
         return types.pop() if len(types) == 1 else None
 
-    def exercise_directives(self, fpath, parsed_results):
+    def exercise_directives(self, parsed_results):
         # "parsed_results" is sorted according to
         # the order of "dfdone.tml.grammar.constructs",
         # which means that the order of "constructs"
@@ -109,7 +109,6 @@ class Parser:
                 # to determine what changed in the upcoming recursion.
                 _components = copy(self.components)
                 self.exercise_directives(
-                    potential_file,
                     Parser.parse_file(potential_file)
                 )
                 # Select only the components added during recursion.

@@ -4,10 +4,10 @@ setup(
     name='dfdone',
     version='0.0.1',
     packages=find_packages(),
-    url='https://github.com/auth0/dfdone',
-    license='',
-    author='Auth0',
-    author_email='security@auth0.com',
+    url='https://github.com/elespike/dfdone',
+    license='MIT',
+    author='elespike',
+    author_email='elespike@lab26.net',
     description=(
         'Python framework to generate threat models from natural language.'
     ),
