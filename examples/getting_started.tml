@@ -86,7 +86,10 @@ Disprove "Lack of TLS", "Improper Error Handling"
 # Refer to sample_threats.tml for threat details.
 
 # Specific threats applied to specific data:
-"User" sends "un", risking "xss"; "pw", risking "cmdi"; to "Web App".
+"User" sends
+    "un", risking "xss";
+    "pw", risking "cmdi";
+    to "Web App".
 
 # Threats applied to entire interaction:
 "Web App" sends "creds" to "DB", risking "sqli".
@@ -115,3 +118,4 @@ Disprove "Lack of TLS", "Improper Error Handling"
 "Blocking WAF" should be verified on "un" between "User" and "Web App".
 # Even less of a requirement; would be nice to see if the WAF works for server-side injection:
 "Learning WAF" may be implemented on "pw" between "User" and "Web App".
+

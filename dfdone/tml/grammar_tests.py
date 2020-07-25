@@ -222,18 +222,18 @@ interaction_components = [
     # Effect list
     [(
         '"Datum ""One""", risking "XSS", "CSRF"; '
-        '"Data ""Two""" risking "SSRF"; '
+        '"Data ""Two"""\n\trisking "SSRF"; '
         '"Data 3"'
     )],
     # Literals 'to' or 'from'
-    ['to', 'from'],
+    ['to', 'from', '\n\tto'],
     # Object
     ['"Element ""Two"""'],
     # Threat list
-    ['broadly', 'generally'],
+    ['broadly', 'generally', ',\n\tbroadly'],
     ['risking """KGB""", "other APTs"'],
     # Notes
-    ['with note', 'with notes', 'note', 'notes', 'note that', 'noting that'],
+    ['with note', ';\n\twith notes', 'note', 'note that', 'noting that'],
     ['"this is of great concern"']
 ]
 interaction_tests = [' '.join(p) for p in product(*interaction_components)]
@@ -246,13 +246,17 @@ mitigation_components = [
     ['be', 'been'],
     ['implemented', 'applied', 'deployed', 'verified', 'checked'],
     ['on "username"', 'on "username", "password"',
-     'on all data', 'on all data except "username"',
-     'on all data except "username", "password"'],
+     'on all data', 'on all data except for "username"',
+     'on all data except "username", "password"',
+     'on all data;\n\texcept "username", "password"'],
     ['between "User" and "Web", "Web" and "DB"',
      'between all nodes except "User" and "Web", "Web" and "DB"',
      'within "User", "Web"', 'within all nodes except "User"',
      'within all nodes except "User", "Web"',
-     'between "User" and "Web", and within "DB"'],
+     'between "User" and "Web", and within "DB"',
+     'within "DB", and between "User" and "Web"',
+     'between "User" and "Web",\n\tand within "DB"',
+     'within "DB",\n\tand between "User" and "Web"'],
 ]
 mitigation_tests = [' '.join(p) for p in product(*mitigation_components)]
 all_tests.append(mitigation_tests)
