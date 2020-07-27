@@ -15,17 +15,6 @@ default_css_path = Path(
     F"{Path(__file__).resolve().parent}/../static/default.css"
 ).resolve()
 
-inline_css_kwargs = {
-    'type': cpath,
-    'default': default_css_path,
-    'show_default': True,
-    'help': 'CSS file to include inline.'
-}
-no_css_kwargs = {
-    'is_flag': True,
-    'default': False,
-    'help': 'Do not include any CSS inline. Supercedes --inline-css.'
-}
 i_kwargs = {
     'multiple': True,
     'default': ['all'],
@@ -46,6 +35,17 @@ x_kwargs = {
         'If "all" is used, the diagram will remain.\n'
         'Repeatable. Example:\n-x diagram -x data'
     )
+}
+inline_css_kwargs = {
+    'type': cpath,
+    'default': default_css_path,
+    'show_default': True,
+    'help': 'CSS file to include inline.'
+}
+no_css_kwargs = {
+    'is_flag': True,
+    'default': False,
+    'help': 'Do not include any CSS inline. Supercedes --inline-css.'
 }
 
 

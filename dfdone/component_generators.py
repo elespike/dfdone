@@ -7,38 +7,38 @@ from dfdone.components import (
 
 
 def yield_elements(components):
-    return (v for v in components.values() if isinstance(v, Element))
+    for element in filter(
+        lambda v: isinstance(v, Element),
+        components.values()
+    ):
+        yield element
 
 
 def yield_data(components):
-    data = [v for v in components.values() if isinstance(v, Datum)]
-    data.sort(key=lambda d: d.label)
-    data.sort(key=lambda d: d.classification, reverse=True)
-    return (data)
+    for datum in filter(
+        lambda v: isinstance(v, Datum),
+        components.values()
+    ):
+        yield datum
 
 
 def yield_threats(components):
-    threats = [
-        v for v in components.values()
-        if isinstance(v, Threat) and v.active
-    ]
-    threats.sort(key=lambda t: t.label)
-    threats.sort(key=lambda t: t.calculate_risk(), reverse=True)
-    return (threats)
+    for threat in filter(
+        lambda v: isinstance(v, Threat) and v.active,
+        components.values()
+    ):
+        yield threat
 
 
 def yield_measures(components):
-    measures = [
-        v for v in components.values()
-        if isinstance(v, Measure)
-    ]
-    measures.sort(key=lambda m: m.label)
-    measures.sort(key=lambda m: m.capability, reverse=True)
-    return (measures)
+    for measure in filter(
+        lambda v: isinstance(v, Measure),
+        components.values()
+    ):
+        yield measure
 
 
 def yield_interactions(components):
-    return (
-        i for e in yield_elements(components)
-        for i in e.interactions
-    )
+    for e in yield_elements(components):
+        for i in e.interactions:
+            yield i
