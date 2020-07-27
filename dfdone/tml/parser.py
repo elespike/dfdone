@@ -40,14 +40,10 @@ class Parser:
     def parse_file(fpath):
         with open(fpath) as f:
             data = f.read()
-
-        results = list()
-        for c in constructs:
-            for r in c.scanString(data):
-                # scanString returns a tuple containing
-                # ParseResults as its first element.
-                results.append(r[0])
-        return results
+        return [
+            result for c in constructs
+            for result in c.searchString(data)
+        ]
 
     def compile_components(self, component_list):
         components = list()
