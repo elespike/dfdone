@@ -41,7 +41,7 @@ class Parser:
         with open(fpath) as f:
             data = f.read()
         return [
-            result for c in constructs
+            result for c in constructs.values()
             for result in c.searchString(data)
         ]
 

@@ -1,6 +1,5 @@
 from itertools import combinations
 from re import IGNORECASE
-from sys import exit as sys_exit
 
 from pyparsing import (
     And,
@@ -11,15 +10,12 @@ from pyparsing import (
     OneOrMore,
     Optional,
     Or,
-    ParseException,
     QuotedString,
     Regex,
     Suppress,
     delimitedList,
     lineStart
 )
-
-from dfdone.tml import grammar_tests
 
 
 # Creating a named group exposes the match as an attribute.
@@ -160,16 +156,17 @@ constructs = [
 # This allows commenting out lines in the threat model file.
 constructs = [lineStart + c + Optional(Literal('.')) for c in list(constructs)]
 
-if __name__ == '__main__':
-    def test_grammar(construct, construct_tests):
-        # TODO move to formal tests once those exist
-        for r in construct.runTests(construct_tests, parseAll=True)[1]:
-            if isinstance(r[-1], ParseException):
-                sys_exit(1)
+construct_keys = [
+    'inclusion',
+    'element',
+    'datum',
+    'threat',
+    'measure',
+    'list',
+    'modification',
+    'assumption',
+    'interaction',
+    'mitigation',
+]
 
-    count = 0
-    for c, t in zip(constructs, grammar_tests.all_tests):
-        count += len(t)
-        test_grammar(c, t)  # exits if unsuccessful
-    # TODO convert to logging, when logging exists
-    print(F'[+] {count} grammar tests successful!')
+constructs = {k: v for k, v in zip(construct_keys, constructs)}
