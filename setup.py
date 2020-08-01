@@ -9,10 +9,9 @@ setup(
     author='elespike',
     author_email='elespike@lab26.net',
     description=(
-        'Python framework to generate threat models from natural language.'
+        'Generate threat models from natural language!'
     ),
     install_requires=[
-        'Click',
         'graphviz',
         'pyparsing'
     ],

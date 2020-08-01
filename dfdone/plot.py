@@ -22,7 +22,7 @@ def table_from_list(class_name, table_headers, table_rows):
     final_list.extend(table_rows)
     final_list.append('</tbody>')
     table_body = '\n'.join(final_list)
-    return F'\n<table class="{class_name}">\n{table_body}\n</table>\n'
+    return F'\n\n<table class="{class_name}">\n{table_body}\n</table>'
 
 
 def id_format(label):
@@ -89,7 +89,7 @@ def build_table_rows(class_prefix, component_list):
 def build_assumption_table(assumptions):
     headers = ['#', 'Disprove', 'Description']
     return table_from_list(
-        'assumption_table',
+        'assumption-table',
         headers,
         build_table_rows(ASSUMPTION, assumptions)
     )
@@ -100,7 +100,7 @@ def build_data_table(data):
     data = sorted(data, key=lambda d: d.label)
     data.sort(key=lambda d: d.classification, reverse=True)
     return table_from_list(
-        'data_table',
+        'data-table',
         headers,
         build_table_rows(DATA, data)
     )
@@ -111,7 +111,7 @@ def build_threat_table(threats):
     threats = sorted(threats, key=lambda t: t.label)
     threats.sort(key=lambda t: t.calculate_risk(), reverse=True)
     return table_from_list(
-        'threat_table',
+        'threat-table',
         headers,
         build_table_rows(THREAT, threats)
     )
@@ -122,41 +122,46 @@ def build_measure_table(measures):
     measures = sorted(measures, key=lambda m: m.label)
     measures.sort(key=lambda m: m.capability, reverse=True)
     return table_from_list(
-        'measure_table',
+        'measure-table',
         headers,
         build_table_rows(MEASURE, measures)
     )
 
 
-def build_diagram(elements):
+def build_diagram(elements, interactions):
     dot = Digraph(format='svg')
     dot.attr(rankdir='TB')
 
     groups = ddict(list)
     for e in elements:
-        for interaction in e.interactions:
-            dot.edge(
-                e.label,
-                interaction.target.label,
-                label=F'({interaction.index + 1})',
-                constraint=interaction.laterally
-            )
         if e.group:
             groups[e.group].append(e)
-            continue
-        add_node(dot, e)
+        else:
+            add_node(dot, e)
 
-    if groups:
-        for group, group_elements in groups.items():
-            # Name must start with 'cluster'.
-            sub = Digraph(name=F'cluster_{group}')
-            sub.attr(label=group, style='filled', color='lightgrey')
-            for e in group_elements:
-                add_node(sub, e)
-            dot.subgraph(sub)
+    for group, group_elements in groups.items():
+        # Graphviz requirement: name must start with 'cluster'.
+        sub = Digraph(name=F'cluster_{group}')
+        sub.attr(label=group, style='filled', color='lightgrey')
+        for e in group_elements:
+            add_node(sub, e)
+        dot.subgraph(sub)
+
+    _interactions = sorted(interactions, key=lambda i: i.created)
+    for i_index, interaction in enumerate(_interactions):
+        dot.edge(
+            interaction.source.label,
+            interaction.target.label,
+            label=F'({i_index + 1})',
+            constraint=interaction.laterally
+        )
 
     # Return the SVG source:
-    return dot.pipe().decode('utf-8')
+    return (
+        '\n\n<div class="diagram">\n'
+        F"{dot.pipe().decode('utf-8').strip()}\n"
+        '</div>'
+    )
 
 
 def add_node(graph, element):
@@ -207,13 +212,14 @@ def build_threats_cell(threats, classification, interaction_table, rowspan=1):
 def build_interaction_table(interactions):
     interaction_table = list()
     headers = ['#', 'Data', 'Data Threats', 'Interaction Threats', 'Notes']
-    for interaction in sorted(interactions, key=lambda i: i.index):
+    _interactions = sorted(interactions, key=lambda i: i.created)
+    for i_index, interaction in enumerate(_interactions):
         interaction_rowspan = len(interaction.data_threats.values())
         interaction_table.append('<tr>')
         interaction_table.append((
             F'<td rowspan="{interaction_rowspan}">'
             '<div class="row-number interaction-number">'
-            F'{interaction.index + 1}</div></td>'
+            F'{i_index + 1}</div></td>'
         ))
 
         di = 0
@@ -263,4 +269,4 @@ def build_interaction_table(interactions):
             interaction_table.append('</tr>')
             di += 1
 
-    return table_from_list('interaction_table', headers, interaction_table)
+    return table_from_list('interaction-table', headers, interaction_table)

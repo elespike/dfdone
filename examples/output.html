@@ -1,0 +1,449 @@
+<style>
+table {
+  border-collapse: collapse;
+}
+table.assumption-table {
+}
+table.data-table {
+}
+table.threat-table {
+}
+table.measure-table {
+}
+table.interaction-table {
+}
+
+td {
+  border: 1px solid black;
+}
+
+div.diagram {
+}
+
+div.label {
+}
+div.assumption-label {
+}
+div.data-label {
+}
+div.threat-label {
+}
+div.mitigation-label {
+  margin-left: 12px;
+  padding-left: 6px;
+}
+
+div.description {
+}
+div.assumption-description {
+}
+div.data-description {
+}
+div.threat-description {
+}
+
+div.row-number {
+}
+div.assumption-number {
+}
+div.data-number {
+}
+div.threat-number {
+}
+div.interaction-number {
+}
+div.interaction-notes {
+}
+
+div.classification-public {
+}
+div.classification-restricted {
+  font-style: italic;
+}
+div.classification-confidential {
+  font-weight: bold;
+}
+
+div.risk-low {
+  background-color: Khaki;
+}
+div.risk-medium {
+  background-color: SandyBrown;
+}
+div.risk-high {
+  background-color: Tomato;
+}
+
+div.imperative-none {
+}
+div.imperative-may {
+}
+div.imperative-should {
+  font-style: italic;
+}
+div.imperative-must {
+  font-weight: bold;
+}
+
+div.capability-detective {
+  background-color: LightSkyBlue;
+}
+div.capability-partial {
+  background: #c2e184;
+}
+div.capability-full {
+  background: LimeGreen;
+}
+
+div.status-pending {
+  background-image: linear-gradient(to right, rgba(0,0,0,0), rgba(255,255,255,0.9) 25%);
+}
+div.status-implemented {
+  background-image: linear-gradient(to right, rgba(0,0,0,0), rgba(255,255,255,0.9) 75%);
+}
+div.status-verified {
+}
+
+div.dash {
+  text-align: center;
+}
+</style>
+
+<table class="assumption-table">
+<thead>
+<th>#</th>
+<th>Disprove</th>
+<th>Description</th>
+</thead>
+<tbody>
+<tr>
+<td>
+<div class="row-number assumption-number">1</div>
+</td>
+<td>
+<div id="lack-of-tls" class="label assumption-label risk-high">Lack of TLS</div>
+</td>
+<td>
+<div class="dash">-</div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="row-number assumption-number">2</div>
+</td>
+<td>
+<div id="improper-error-handling" class="label assumption-label risk-medium">Improper Error Handling</div>
+</td>
+<td>
+<div class="dash">-</div>
+</td>
+</tr>
+</tbody>
+</table>
+
+<table class="data-table">
+<thead>
+<th>#</th>
+<th>Data</th>
+<th>Description</th>
+</thead>
+<tbody>
+<tr>
+<td>
+<div class="row-number data-number">1</div>
+</td>
+<td>
+<div id="pw" class="label data-label classification-confidential">pw</div>
+</td>
+<td>
+<div class="dash">-</div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="row-number data-number">2</div>
+</td>
+<td>
+<div id="session-cookie" class="label data-label classification-restricted">session cookie</div>
+</td>
+<td>
+<div class="dash">-</div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="row-number data-number">3</div>
+</td>
+<td>
+<div id="un" class="label data-label classification-public">un</div>
+</td>
+<td>
+<div class="dash">-</div>
+</td>
+</tr>
+</tbody>
+</table>
+
+<table class="threat-table">
+<thead>
+<th>#</th>
+<th>Active Threat</th>
+<th>Applicable Measures</th>
+<th>Description</th>
+</thead>
+<tbody>
+<tr>
+<td>
+<div class="row-number threat-number">1</div>
+</td>
+<td>
+<div id="command-injection" class="label threat-label risk-high">Command Injection</div>
+</td>
+<td>
+<div class="label measure-label capability-full"><a href="#input-validation">Input Validation</a></div>
+<div class="label measure-label capability-partial"><a href="#blocking-waf">Blocking WAF</a></div>
+<div class="label measure-label capability-detective"><a href="#learning-waf">Learning WAF</a></div>
+</td>
+<td>
+<div class="dash">-</div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="row-number threat-number">2</div>
+</td>
+<td>
+<div id="cross-site-scripting" class="label threat-label risk-high">Cross-Site Scripting</div>
+</td>
+<td>
+<div class="label measure-label capability-full"><a href="#input-validation">Input Validation</a></div>
+<div class="label measure-label capability-partial"><a href="#blocking-waf">Blocking WAF</a></div>
+<div class="label measure-label capability-detective"><a href="#learning-waf">Learning WAF</a></div>
+</td>
+<td>
+<div class="dash">-</div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="row-number threat-number">3</div>
+</td>
+<td>
+<div id="database-injection" class="label threat-label risk-high">Database Injection</div>
+</td>
+<td>
+<div class="label measure-label capability-full"><a href="#input-validation">Input Validation</a></div>
+<div class="label measure-label capability-full"><a href="#parameterized-queries">Parameterized Queries</a></div>
+<div class="label measure-label capability-partial"><a href="#blocking-waf">Blocking WAF</a></div>
+<div class="label measure-label capability-detective"><a href="#learning-waf">Learning WAF</a></div>
+</td>
+<td>
+<div class="dash">-</div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="row-number threat-number">4</div>
+</td>
+<td>
+<div id="information-disclosure" class="label threat-label risk-medium">Information Disclosure</div>
+</td>
+<td>
+</td>
+<td>
+<div class="dash">-</div>
+</td>
+</tr>
+</tbody>
+</table>
+
+<table class="measure-table">
+<thead>
+<th>#</th>
+<th>Security Measure</th>
+<th>Mitigable Threats</th>
+<th>Description</th>
+</thead>
+<tbody>
+<tr>
+<td>
+<div class="row-number measure-number">1</div>
+</td>
+<td>
+<div id="input-validation" class="label measure-label capability-full">Input Validation</div>
+</td>
+<td>
+<div class="label threat-label risk-high"><a href="#command-injection">Command Injection</a></div>
+<div class="label threat-label risk-high"><a href="#cross-site-scripting">Cross-Site Scripting</a></div>
+<div class="label threat-label risk-high"><a href="#database-injection">Database Injection</a></div>
+</td>
+<td>
+<div class="description measure-description"><a href="https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html">Click for more info</a></div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="row-number measure-number">2</div>
+</td>
+<td>
+<div id="parameterized-queries" class="label measure-label capability-full">Parameterized Queries</div>
+</td>
+<td>
+<div class="label threat-label risk-high"><a href="#database-injection">Database Injection</a></div>
+</td>
+<td>
+<div class="dash">-</div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="row-number measure-number">3</div>
+</td>
+<td>
+<div id="blocking-waf" class="label measure-label capability-partial">Blocking WAF</div>
+</td>
+<td>
+<div class="label threat-label risk-high"><a href="#command-injection">Command Injection</a></div>
+<div class="label threat-label risk-high"><a href="#cross-site-scripting">Cross-Site Scripting</a></div>
+<div class="label threat-label risk-high"><a href="#database-injection">Database Injection</a></div>
+</td>
+<td>
+<div class="description measure-description">WAF in blocking mode</div>
+</td>
+</tr>
+<tr>
+<td>
+<div class="row-number measure-number">4</div>
+</td>
+<td>
+<div id="learning-waf" class="label measure-label capability-detective">Learning WAF</div>
+</td>
+<td>
+<div class="label threat-label risk-high"><a href="#command-injection">Command Injection</a></div>
+<div class="label threat-label risk-high"><a href="#cross-site-scripting">Cross-Site Scripting</a></div>
+<div class="label threat-label risk-high"><a href="#database-injection">Database Injection</a></div>
+</td>
+<td>
+<div class="description measure-description">WAF in learning mode</div>
+</td>
+</tr>
+</tbody>
+</table>
+
+<div class="diagram">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Generated by graphviz version 2.40.1 (20161225.0304)
+ -->
+<!-- Title: %3 Pages: 1 -->
+<svg width="99pt" height="218pt"
+ viewBox="0.00 0.00 98.99 218.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 214)">
+<title>%3</title>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-214 94.9919,-214 94.9919,4 -4,4"/>
+<!-- User -->
+<g id="node1" class="node">
+<title>User</title>
+<polygon fill="#000000" stroke="#ffffff" points="72.496,-210 18.496,-210 18.496,-174 72.496,-174 72.496,-210"/>
+<text text-anchor="middle" x="45.496" y="-188.3" font-family="Times,serif" font-size="14.00" fill="#ffffff">User</text>
+</g>
+<!-- Web App -->
+<g id="node2" class="node">
+<title>Web App</title>
+<ellipse fill="#ffffff" stroke="#000000" cx="45.496" cy="-105" rx="45.4919" ry="18"/>
+<text text-anchor="middle" x="45.496" y="-101.3" font-family="Times,serif" font-size="14.00" fill="#000000">Web App</text>
+</g>
+<!-- User&#45;&gt;Web App -->
+<g id="edge1" class="edge">
+<title>User&#45;&gt;Web App</title>
+<path fill="none" stroke="#000000" d="M34.4285,-173.9406C31.5946,-168.3873 28.9409,-162.1207 27.496,-156 25.6151,-148.0326 27.1033,-139.5766 29.8838,-131.889"/>
+<polygon fill="#000000" stroke="#000000" points="33.1218,-133.22 33.9406,-122.6569 26.7133,-130.4039 33.1218,-133.22"/>
+<text text-anchor="middle" x="35.496" y="-144.8" font-family="Times,serif" font-size="14.00" fill="#000000">(1)</text>
+</g>
+<!-- Web App&#45;&gt;User -->
+<g id="edge3" class="edge">
+<title>Web App&#45;&gt;User</title>
+<path fill="none" stroke="#000000" d="M45.496,-123.0034C45.496,-134.7801 45.496,-150.4102 45.496,-163.8156"/>
+<polygon fill="#000000" stroke="#000000" points="41.9961,-163.9735 45.496,-173.9735 48.9961,-163.9736 41.9961,-163.9735"/>
+<text text-anchor="middle" x="53.496" y="-144.8" font-family="Times,serif" font-size="14.00" fill="#000000">(3)</text>
+</g>
+<!-- DB -->
+<g id="node3" class="node">
+<title>DB</title>
+<polygon fill="#ffffff" stroke="#000000" points="72.496,-36 22.496,-36 18.496,-32 18.496,0 68.496,0 72.496,-4 72.496,-36"/>
+<polyline fill="none" stroke="#000000" points="68.496,-32 18.496,-32 "/>
+<polyline fill="none" stroke="#000000" points="68.496,-32 68.496,0 "/>
+<polyline fill="none" stroke="#000000" points="68.496,-32 72.496,-36 "/>
+<text text-anchor="middle" x="45.496" y="-14.3" font-family="Times,serif" font-size="14.00" fill="#000000">DB</text>
+</g>
+<!-- Web App&#45;&gt;DB -->
+<g id="edge2" class="edge">
+<title>Web App&#45;&gt;DB</title>
+<path fill="none" stroke="#000000" d="M45.496,-86.9735C45.496,-75.1918 45.496,-59.5607 45.496,-46.1581"/>
+<polygon fill="#000000" stroke="#000000" points="48.9961,-46.0033 45.496,-36.0034 41.9961,-46.0034 48.9961,-46.0033"/>
+<text text-anchor="middle" x="53.496" y="-57.8" font-family="Times,serif" font-size="14.00" fill="#000000">(2)</text>
+</g>
+</g>
+</svg>
+</div>
+
+<table class="interaction-table">
+<thead>
+<th>#</th>
+<th>Data</th>
+<th>Data Threats</th>
+<th>Interaction Threats</th>
+<th>Notes</th>
+</thead>
+<tbody>
+<tr>
+<td rowspan="2"><div class="row-number interaction-number">1</div></td>
+<td><div class="label data-label classification-confidential"><a href="#pw">pw</a></div></td>
+<td rowspan=1>
+<div class="label threat-label risk-high"><a href="#command-injection">Command Injection</a></div>
+<div class="label mitigation-label imperative-must capability-full status-pending"><a href="#input-validation">Input Validation</a></div>
+<div class="label mitigation-label imperative-may capability-detective status-pending"><a href="#learning-waf">Learning WAF</a></div>
+</td>
+<td rowspan="2"><div class="dash">-</div></td>
+<td rowspan="2">
+<div class="dash">-</div>
+</td>
+</tr>
+<tr>
+<td><div class="label data-label classification-public"><a href="#un">un</a></div></td>
+<td rowspan=1>
+<div class="label threat-label risk-high"><a href="#cross-site-scripting">Cross-Site Scripting</a></div>
+<div class="label mitigation-label imperative-must capability-full status-pending"><a href="#input-validation">Input Validation</a></div>
+<div class="label mitigation-label imperative-should capability-partial status-implemented"><a href="#blocking-waf">Blocking WAF</a></div>
+</td>
+</tr>
+<tr>
+<td rowspan="2"><div class="row-number interaction-number">2</div></td>
+<td><div class="label data-label classification-confidential"><a href="#pw">pw</a></div></td>
+<td><div class="dash">-</div></td>
+<td rowspan=2>
+<div class="label threat-label risk-high"><a href="#database-injection">Database Injection</a></div>
+<div class="label mitigation-label imperative-must capability-full status-pending"><a href="#parameterized-queries">Parameterized Queries</a></div>
+</td>
+<td rowspan="2">
+<div class="dash">-</div>
+</td>
+</tr>
+<tr>
+<td><div class="label data-label classification-public"><a href="#un">un</a></div></td>
+<td><div class="dash">-</div></td>
+</tr>
+<tr>
+<td rowspan="1"><div class="row-number interaction-number">3</div></td>
+<td><div class="label data-label classification-restricted"><a href="#session-cookie">session cookie</a></div></td>
+<td><div class="dash">-</div></td>
+<td rowspan=1>
+<div class="label threat-label risk-medium"><a href="#information-disclosure">Information Disclosure</a></div>
+</td>
+<td rowspan="1">
+<div class="dash">-</div>
+</td>
+</tr>
+</tbody>
+</table>

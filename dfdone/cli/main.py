@@ -1,70 +1,92 @@
 from functools import partial
+from io import StringIO
 from pathlib import Path
-from sys import exit
 
-import click
+import argparse
 
 from dfdone import component_generators as cg
 from dfdone import plot
 from dfdone.tml.parser import Parser
 
 
-cpath = click.Path(exists=True, dir_okay=False, resolve_path=True)
+def build_arg_parser(testing=False):
+    model_file_kwargs = {
+        'type': argparse.FileType('r') if not testing else StringIO,
+        'metavar': 'MODEL_FILE',
+    }
 
-default_css_path = Path(
-    F"{Path(__file__).resolve().parent}/../static/default.css"
-).resolve()
+    i_defaults = [
+        'assumptions',
+        'data',
+        'threats',
+        'measures',
+        'diagram',
+        'interactions',
+    ]
+    i_kwargs = {
+        'nargs': '*',
+        'default': i_defaults,
+        'metavar': 'INCLUDE',
+        'help': (
+            'Include specified information in the output. Options are:\n'
+            'assumptions, data, threats, measures, diagram, interactions.\n'
+            'Options can be repeated, and their order will be respected.\n'
+            'Example: "-i diagram data diagram threats" outputs the diagram,\n'
+            'then the data table, then the diagram again, then the threat table.\n'
+            F"Default: \"{' '.join(i_defaults)}\"."
+        ),
+    }
 
-i_kwargs = {
-    'multiple': True,
-    'default': ['all'],
-    'show_default': True,
-    'help': (
-        'Include specified information in the output. Options are:\n'
-        'all, diagram, assumptions, data, threats, measures, interactions.\n'
-        'Repeatable. Order will be respected. Example:\n-i diagram -i data'
+    x_kwargs = {
+        'nargs': '*',
+        'default': [],
+        'metavar': 'EXCLUDE',
+        'help': (
+            'Excludes specified information from the output.\n'
+            F"Same options as {i_kwargs['metavar']}. Order does not matter.\n"
+            'Useful to exclude specific portions '
+            F"from the default set of {i_kwargs['metavar']}.\n"
+            'Example: "-x diagram -x data" outputs the assumption table,\n'
+            'skips the data table, adds the threats and measures tables,\n'
+            'skips the diagram, and finally adds the interactions table.'
+        ),
+    }
+
+    default_css_path = Path(
+        F"{Path(__file__).resolve().parent}/../static/default.css"
+    ).resolve()
+    css_kwargs = {
+        'type': argparse.FileType('r'),
+        'nargs': '?',
+        'default': default_css_path,
+        'metavar': 'CSS_FILE',
+        'help': (
+            'CSS file to include inline at the beginning of the output.\n'
+            F"Default: {default_css_path}"
+        ),
+    }
+
+    no_css_kwargs = {
+        'action': 'store_true',
+        'help': 'Do not include any CSS inline.',
+    }
+
+    parser = argparse.ArgumentParser(
+        description='Generate threat models from natural language!',
+        formatter_class=argparse.RawTextHelpFormatter,
     )
-}
-x_kwargs = {
-    'multiple': True,
-    'default': ['none'],
-    'show_default': True,
-    'help': (
-        'Supercedes -i, excluding specified information from the output.\n'
-        'Options are the same as -i. '
-        'If "all" is used, the diagram will remain.\n'
-        'Repeatable. Example:\n-x diagram -x data'
-    )
-}
-inline_css_kwargs = {
-    'type': cpath,
-    'default': default_css_path,
-    'show_default': True,
-    'help': 'CSS file to include inline.'
-}
-no_css_kwargs = {
-    'is_flag': True,
-    'default': False,
-    'help': 'Do not include any CSS inline. Supercedes --inline-css.'
-}
+    parser.add_argument('model_file', **model_file_kwargs)
+    parser.add_argument('-i', '--include', **i_kwargs)
+    parser.add_argument('-x', '--exclude', **x_kwargs)
+    parser.add_argument('--css', **css_kwargs)
+    parser.add_argument('--no-css', **no_css_kwargs)
+    return parser
 
 
-@click.command()
-@click.argument('model_file', type=cpath)
-@click.option('-i', '--include', **i_kwargs)
-@click.option('-x', '--exclude', **x_kwargs)
-@click.option('--inline-css', **inline_css_kwargs)
-@click.option('--no-css', **no_css_kwargs)
-def main(model_file, include, exclude, inline_css, no_css):
-    include = set([i.lower() for i in include])
-    exclude = set([i.lower() for i in exclude])
-
-    tml_parser = Parser(model_file)
-    elements = cg.yield_elements(tml_parser.components)
-    if not elements:
-        # TODO proper logging
-        print('No element definitions found!')
-        exit(1)
+def main(args=None, return_html=False):
+    if args is None:
+        args = build_arg_parser().parse_args()
+    tml_parser = Parser(args.model_file)
 
     include_information = {
         'assumptions': partial(
@@ -85,27 +107,32 @@ def main(model_file, include, exclude, inline_css, no_css):
         ),
         'diagram': partial(
             plot.build_diagram,
-            elements
+            cg.yield_elements(tml_parser.components),
+            cg.yield_interactions(tml_parser.components)
         ),
         'interactions': partial(
             plot.build_interaction_table,
             cg.yield_interactions(tml_parser.components)
         ),
     }
-    if 'all' in include:
-        include = include_information.keys()
-    if 'all' in exclude:
-        include = ['diagram']
-        exclude = []
 
     html = ''
-    for info in include:
-        if info in exclude:
-            continue
-        pf = include_information.get(info, None)
-        if pf is not None:
-            html += pf()
-    if not no_css:
-        with open(inline_css) as f:
-            html = F'<style>\n{f.read()}\n</style>' + html
-    print(html)
+    for info in filter(
+        lambda i: (i in include_information.keys()
+                   and i not in args.exclude),
+        args.include
+    ):
+        fn = include_information[info]
+        html += fn()
+    if not args.no_css:
+        with args.css.open() as f:
+            html = F"<style>\n{f.read().strip()}\n</style>{html}"
+
+    if not args.model_file.closed:
+        args.model_file.close()
+
+    html = html.strip()
+    if return_html:
+        return html
+    else:
+        print(html, end='')

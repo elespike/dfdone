@@ -3,11 +3,20 @@ table {
 }
 table.assumption-table {
 }
+table.data-table {
+}
+table.threat-table {
+}
+table.measure-table {
+}
 table.interaction-table {
 }
 
 td {
   border: 1px solid black;
+}
+
+div.diagram {
 }
 
 div.label {

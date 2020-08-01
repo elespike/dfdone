@@ -1,3 +1,5 @@
+from datetime import datetime as dt
+
 from dfdone.enums import (
     Action,
     Classification,
@@ -29,9 +31,9 @@ class Datum(Component):
 
 
 class Interaction:
-    def __init__(self, index, action, source, target,
+    def __init__(self, timestamp, action, source, target,
                  data_threats, broad_threats, notes, laterally):
-        self.index = index
+        self.created = timestamp
         self.action = action
         self.source = source
         self.target = target
@@ -62,9 +64,6 @@ class Interaction:
 
 
 class Element(Component):
-    global_index = 0
-    interaction_index = 0
-
     def __init__(self, label, profile, role, group, description):
         super().__init__(label, description)
         self.role = role
@@ -73,13 +72,11 @@ class Element(Component):
 
         self.interactions = list()
 
-        Element.global_index += 1
-
     @staticmethod
     def interact(action, source, destination,
                  data_threats, broad_threats, notes, laterally):
         source.interactions.append(Interaction(
-            Element.interaction_index,
+            dt.utcnow().timestamp(),
             action,
             source,
             destination,
@@ -88,7 +85,6 @@ class Element(Component):
             notes,
             laterally
         ))
-        Element.interaction_index += 1
 
     def processes(self, data_threats, broad_threats, notes, laterally):
         Element.interact(Action.PROCESS, self, self,

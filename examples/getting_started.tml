@@ -4,15 +4,17 @@
 # Including Other .tml Files #
 ##############################
 
-# You can include other files like so:
-Include "sample_threats.tml" as "injection", except for "Information Disclosure"
-# This will make all entities from the included file available in this file.
+# To include entities defined in other files,
+# you can specify their path relative to a common parent directory:
+Include "examples/sample_threats.tml" as "injection", except for "Information Disclosure"
+# Now, all components defined in sample_threats.tml are available here.
 
 # In the above example, the construct 'as "injection"' is optional;
-#   it simply creates an alias for use in the tml file.
+# it simply creates an alias for use in the tml file.
+
 # The "except" construct only excludes items from the "injection" group/alias;
-#   in other words, "Information Disclosure" will still be available for use
-#   in this file, but it will not be part of the "injection" group/alias.
+# in other words, "Information Disclosure" will still be available for use
+# in this file, but it will not be part of the "injection" group/alias.
 
 
 ###############
@@ -20,7 +22,7 @@ Include "sample_threats.tml" as "injection", except for "Information Disclosure"
 ###############
 
 # In DFDone, assumptions are no different than threats
-#   because assumptions that aren't validated carry full risk.
+# because assumptions that aren't validated carry full risk.
 # Define them like you would define threats:
 "Lack of TLS" is a high impact, high probability threat
 "Improper Error Handling" is a medium impact, medium probability threat
@@ -49,7 +51,7 @@ Disprove "Lack of TLS", "Improper Error Handling"
 "session cookie" is restricted data
 
 # Optional grouping has no effect on the diagram;
-#   it simply allows for shortcuts in this file.
+# it simply allows for shortcuts in this file.
 "backend" is "Web App", "DB"
 "creds" are "un", "pw"
 
@@ -58,7 +60,7 @@ Disprove "Lack of TLS", "Improper Error Handling"
 # Threats #
 ###########
 
-# See sample_threats.tml.
+# See examples/sample_threats.tml.
 
 
 #####################
@@ -66,7 +68,7 @@ Disprove "Lack of TLS", "Improper Error Handling"
 #####################
 
 # Security measures can be full/partial/detective,
-#   and can apply to one or many threats, or threat groups:
+# and can apply to one or many threats, or threat groups:
 "Input Validation" is a full measure against "injection"
     described as "<a href=""https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html"">Click for more info</a>"
 "Parameterized Queries" are a full measure against "sqli"
@@ -109,8 +111,8 @@ Disprove "Lack of TLS", "Improper Error Handling"
 
 # Mitigations can apply to all or specific data between pairs of elements.
 # They will only reduce the likelihood (not severity) of affected threats,
-#   and only when they have been marked as verified; e.g.:
-#   "mitigation" has been verified on...
+# and only when they have been marked as verified; e.g.:
+# "mitigation" has been verified on...
 
 "inpval" must be implemented on all data between "User" and "Web App".
 "Parameterized Queries" must be implemented on all data between "Web App" and "DB".

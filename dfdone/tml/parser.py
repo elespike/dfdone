@@ -28,22 +28,29 @@ from dfdone.tml.grammar import constructs
 
 
 class Parser:
-    def __init__(self, fpath):
+    def __init__(self, model_file):
         self.assumptions = list()
         self.components = dict()
         self.component_groups = dict()
 
-        self.path = fpath
-        self.exercise_directives(Parser.parse_file(self.path))
+        if hasattr(model_file, 'name'):
+            # If model_file is STDIN, this will be the working directory.
+            self.directory = Path(model_file.name).resolve().parent
+        else:
+            # This will happen when running tests,
+            # which are set up to use StringIO to mock model_file.
+            # Since there's no file name, fall back to working directory.
+            self.directory = Path().resolve()
+        self.exercise_directives(Parser.parse_file(model_file))
 
     @staticmethod
-    def parse_file(fpath):
-        with open(fpath) as f:
-            data = f.read()
-        return [
+    def parse_file(model_file):
+        data = model_file.read()
+        results = [
             result for c in constructs.values()
             for result in c.searchString(data)
         ]
+        return results
 
     def compile_components(self, component_list):
         components = list()
@@ -86,27 +93,25 @@ class Parser:
                 self.build_component(r)
 
     def include_file(self, fpath, group_label):
-        model_path = Path(self.path)
-        include_path = Path()
-        anchor = Path(fpath).anchor
-        for part in model_path.resolve().parts:
-            include_path = include_path.joinpath(part)
-            potential_file = include_path.joinpath(
-                fpath.replace(anchor, '', 1)
-                if anchor and fpath.startswith(anchor)
-                else fpath
-            )
-            if potential_file.is_dir():
-                for item in potential_file.iterdir():
-                    self.include_file(str(item.resolve()), group_label)
+        for parent in reversed(self.directory.parents):
+            file_or_dir = None
+            for fsobj in parent.glob(F"*/{fpath}"):
+                file_or_dir = fsobj
+                break  # the first result is the desired one.
+            if file_or_dir is None:
+                continue
 
-            elif potential_file.is_file():
+            if file_or_dir.is_dir():
+                for item in file_or_dir.iterdir():
+                    self.include_file(str(item.resolve()), group_label)
+            elif file_or_dir.is_file():
                 # Save the current state of self.components to be able
                 # to determine what changed in the upcoming recursion.
                 _components = copy(self.components)
-                self.exercise_directives(
-                    Parser.parse_file(potential_file)
-                )
+                with file_or_dir.open() as f:
+                    self.exercise_directives(
+                        Parser.parse_file(f)
+                    )
                 # Select only the components added during recursion.
                 diff = [
                     v for k, v in self.components.items()
@@ -116,7 +121,9 @@ class Parser:
                     self.component_groups[group_label].extend(diff)
                 elif group_label:
                     self.component_groups[group_label] = diff
-                return
+                return  # to stop the loop.
+        # TODO log a warning saying the file to be included could not
+        # be found in the current FS branch.
 
     def process_exceptions(self, exceptions, group_label):
         for c in self.compile_components(exceptions):
