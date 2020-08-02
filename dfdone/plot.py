@@ -1,4 +1,6 @@
 from collections import defaultdict as ddict
+from operator import attrgetter, methodcaller
+
 from graphviz import Digraph
 
 from dfdone.enums import (
@@ -97,8 +99,8 @@ def build_assumption_table(assumptions):
 
 def build_data_table(data):
     headers = ['#', 'Data', 'Description']
-    data = sorted(data, key=lambda d: d.label)
-    data.sort(key=lambda d: d.classification, reverse=True)
+    data = sorted(data, key=attrgetter('label'))
+    data.sort(key=attrgetter('classification'), reverse=True)
     return table_from_list(
         'data-table',
         headers,
@@ -108,8 +110,8 @@ def build_data_table(data):
 
 def build_threat_table(threats):
     headers = ['#', 'Active Threat', 'Applicable Measures', 'Description']
-    threats = sorted(threats, key=lambda t: t.label)
-    threats.sort(key=lambda t: t.calculate_risk(), reverse=True)
+    threats = sorted(threats, key=attrgetter('label'))
+    threats.sort(key=methodcaller('calculate_risk'), reverse=True)
     return table_from_list(
         'threat-table',
         headers,
@@ -119,8 +121,8 @@ def build_threat_table(threats):
 
 def build_measure_table(measures):
     headers = ['#', 'Security Measure', 'Mitigable Threats', 'Description']
-    measures = sorted(measures, key=lambda m: m.label)
-    measures.sort(key=lambda m: m.capability, reverse=True)
+    measures = sorted(measures, key=attrgetter('label'))
+    measures.sort(key=attrgetter('capability'), reverse=True)
     return table_from_list(
         'measure-table',
         headers,
@@ -147,7 +149,7 @@ def build_diagram(elements, interactions):
             add_node(sub, e)
         dot.subgraph(sub)
 
-    _interactions = sorted(interactions, key=lambda i: i.created)
+    _interactions = sorted(interactions, key=attrgetter('created'))
     for i_index, interaction in enumerate(_interactions):
         dot.edge(
             interaction.source.label,
@@ -212,7 +214,7 @@ def build_threats_cell(threats, classification, interaction_table, rowspan=1):
 def build_interaction_table(interactions):
     interaction_table = list()
     headers = ['#', 'Data', 'Data Threats', 'Interaction Threats', 'Notes']
-    _interactions = sorted(interactions, key=lambda i: i.created)
+    _interactions = sorted(interactions, key=attrgetter('created'))
     for i_index, interaction in enumerate(_interactions):
         interaction_rowspan = len(interaction.data_threats.values())
         interaction_table.append('<tr>')

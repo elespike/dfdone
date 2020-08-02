@@ -84,7 +84,7 @@ class Parser:
             # otherwise, modifications will be treated as individual threats.
             elif r.modify:
                 for c in self.compile_components([r.label]):
-                    Parser.modify_component(r, c)
+                    self.modify_component(r, c)
             elif r.action:
                 self.create_interaction(r)
             elif self.get_component_type(r.label) == Measure:
@@ -201,8 +201,9 @@ class Parser:
             threat._measures.add(measure)
             measure._threats.add(threat)
 
-    @staticmethod
-    def modify_component(parsed_result, component):
+    def modify_component(self, parsed_result, component):
+        # Don't use 'elif' here because multiple attributes
+        # from the component may be modified in a single call.
         if parsed_result.profile and hasattr(component, 'profile'):
             component.profile = get_property(
                 parsed_result.profile,
@@ -215,6 +216,7 @@ class Parser:
             )
         if parsed_result.group and hasattr(component, 'group'):
             component.group = parsed_result.group
+
         if (parsed_result.classification
         and hasattr(component, 'classification')):
             component.classification = get_property(
@@ -231,8 +233,22 @@ class Parser:
                 parsed_result.probability,
                 Probability
             )
+        if parsed_result.capability and hasattr(component, 'capability'):
+            component.capability = get_property(
+                parsed_result.capability,
+                Capability
+            )
+        if parsed_result.threat_list and hasattr(component, 'threats'):
+            for t in component.threats:
+                t._measures.remove(component)
+            component._threats = set(self.compile_components(
+                [t.label for t in parsed_result.threat_list]
+            ))
+            for t in component.threats:
+                t._measures.add(component)
         if parsed_result.new_name and hasattr(component, 'label'):
             component.label = parsed_result.new_name
+
         if parsed_result.description and hasattr(component, 'description'):
             component.probability = parsed_result.description
 

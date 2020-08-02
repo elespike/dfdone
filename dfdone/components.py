@@ -1,4 +1,5 @@
 from datetime import datetime as dt
+from operator import attrgetter, methodcaller
 
 from dfdone.enums import (
     Action,
@@ -42,15 +43,12 @@ class Interaction:
         data_threats = {
             k: v for k, v in sorted(
                 data_threats.items(),
-                key=lambda t: t[0].classification,
+                key=lambda i: i[0].classification,
                 reverse=True
             )
         }
-        for d in data_threats:
-            # data_threats is already sorted by classification,
-            # so its first item has the highest classification.
-            self.highest_classification = d.classification
-            break
+        self.highest_classification = max(
+            d.classification for d in data_threats)
 
         self.data_threats = data_threats
         self.broad_threats = broad_threats
@@ -69,7 +67,6 @@ class Element(Component):
         self.role = role
         self.profile = profile
         self.group = group
-
         self.interactions = list()
 
     @staticmethod
@@ -114,12 +111,12 @@ class Threat(Component):
 
     @property
     def measures(self):
-        __measures = sorted(self._measures, key=lambda m: m.label)
-        __measures.sort(
-            key=lambda m: [m.capability, m.imperative, m.status],
+        for measure in sorted(
+            sorted(self._measures, key=attrgetter('label')),
+            key=attrgetter('capability', 'imperative', 'status'),
             reverse=True
-        )
-        return (__measures)
+        ):
+            yield measure
 
     # Defauting to Classification.RESTRICTED effectively means that
     # only impact and probability will be significant in the calculation.
@@ -150,9 +147,9 @@ class Measure(Component):
 
     @property
     def threats(self):
-        __threats = sorted(self._threats, key=lambda t: t.label)
-        __threats.sort(
-            key=lambda t: t.calculate_risk(),
+        for threat in sorted(
+            sorted(self._threats, key=attrgetter('label')),
+            key=methodcaller('calculate_risk'),
             reverse=True
-        )
-        return (__threats)
+        ):
+            yield threat

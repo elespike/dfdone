@@ -9,9 +9,10 @@ from dfdone.components import (
 
 def yield_elements(components):
     """
+    Yields each dfdone.components.Element found in the supplied iterator.
     See examples/getting_started.tml for Element definitions.
     >>> for c in yield_elements(components):
-    ...     assert(isinstance(c, Element))
+    ...     assert isinstance(c, Element)
     ...     print(c.label)
     ...
     User
@@ -27,9 +28,10 @@ def yield_elements(components):
 
 def yield_data(components):
     """
+    Yields each dfdone.components.Datum found in the supplied iterator.
     See examples/getting_started.tml for Data definitions.
     >>> for c in yield_data(components):
-    ...     assert(isinstance(c, Datum))
+    ...     assert isinstance(c, Datum)
     ...     print(c.label)
     ...
     un
@@ -45,10 +47,11 @@ def yield_data(components):
 
 def yield_threats(components):
     """
+    Yields each dfdone.components.Threat found in the supplied iterator.
     See examples/getting_started.tml and examples/sample_threats.tml
     for Threat definitions.
     >>> for c in yield_threats(components):
-    ...     assert(isinstance(c, Threat))
+    ...     assert isinstance(c, Threat)
     ...     print(c.label)
     ...
     Cross-Site Scripting
@@ -65,9 +68,10 @@ def yield_threats(components):
 
 def yield_measures(components):
     """
+    Yields each dfdone.components.Measure found in the supplied iterator.
     See examples/getting_started.tml for Measure definitions.
     >>> for c in yield_measures(components):
-    ...     assert(isinstance(c, Measure))
+    ...     assert isinstance(c, Measure)
     ...     print(c.label)
     ...
     Input Validation
@@ -84,9 +88,10 @@ def yield_measures(components):
 
 def yield_interactions(components):
     """
+    Yields each dfdone.components.Interaction found in the supplied iterator.
     See examples/getting_started.tml for Interaction definitions.
     >>> for c in yield_interactions(components):
-    ...     assert(isinstance(c, Interaction))
+    ...     assert isinstance(c, Interaction)
     ...     print(F"{c.source} -> {c.target}")
     ...
     User -> Web App

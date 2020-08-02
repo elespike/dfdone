@@ -124,7 +124,11 @@ constructs = [
             Or(all_combinations([PROFILE, ROLE, IN + GROUP])),
             CLASSIFICATION + DATUM,
             Or(all_combinations([IMPACT, PROBABILITY])) + THREAT,
-            CAPABILITY + MEASURE ^ MEASURE + AGAINST + THREAT_LIST,
+            Or([
+                CAPABILITY + MEASURE,
+                MEASURE + AGAINST + THREAT_LIST,
+                CAPABILITY + MEASURE + AGAINST + THREAT_LIST,
+            ]),
         ]) + Optional(DESCRIBED + AS + DESCRIPTION)
     ]),
     # These are negative assumptions: anti-patterns which must be disproven.

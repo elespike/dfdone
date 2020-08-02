@@ -13,6 +13,7 @@ class TestGrammar(unittest.TestCase):
             exc = r[-1]
             is_exception = isinstance(exc, ParseException)
             if is_exception:
+                print()
                 print(exc.explain(exc, depth=0))
             yield is_exception
 
@@ -234,17 +235,14 @@ class TestGrammar(unittest.TestCase):
             ['now'],
             # Articles
             ['a', 'an', 'the'],
-            # Capability
-            ['', 'full'],
-            # Literal
-            ['measure'],
-            # Literal 'against' + threat list
-            ['', 'against "XSS", "SQLi"'],
+            # Capability and threat list with literal 'measure'
+            ['full measure', 'measure against "XSS", "SQLi"',
+             'full measure against "XSS", "SQLi"'],
             # Description
             ['', 'described as "exactly what it ""seems"""']
         ]
         modification_tests.extend(
-            [' '.join(p) for p in product(*threat_modifications)]
+            [' '.join(p) for p in product(*measure_modifications)]
         )
 
         self.run_tests(
