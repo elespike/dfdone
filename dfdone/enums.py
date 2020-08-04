@@ -3,23 +3,26 @@ from enum import Enum, IntEnum, auto, unique
 
 @unique
 class Classification(IntEnum):
-    PUBLIC = auto()
-    RESTRICTED = auto()
-    CONFIDENTIAL = auto()
+    PUBLIC = -1
+    RESTRICTED = 0
+    CONFIDENTIAL = 1
 
 
+@unique
 class Role(Enum):
     AGENT = 'agent'
     SERVICE = 'service'
     STORAGE = 'storage'
 
 
+@unique
 class Profile(Enum):
     BLACK = 'black'
     GREY = 'grey'
     WHITE = 'white'
 
 
+@unique
 class Action(Enum):
     PROCESS = 'process'
     RECEIVE = 'receive'
@@ -49,6 +52,7 @@ class Risk(IntEnum):
 
 
 # Using IntEnum to be able to easily sort by Imperative.
+@unique
 class Imperative(IntEnum):
     NONE = auto()
     MAY = auto()
@@ -65,6 +69,7 @@ class Capability(IntEnum):
     FULL = auto()
 
 
+@unique
 # Using IntEnum to be able to easily sort by Status.
 class Status(IntEnum):
     PENDING = auto()

@@ -18,6 +18,7 @@ class TestGrammar(unittest.TestCase):
             yield is_exception
 
     def run_tests(self, construct, tests):
+        # TODO consider splitting into processes
         results = construct.runTests(
             tests,
             printResults=False

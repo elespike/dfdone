@@ -4,6 +4,7 @@ from operator import attrgetter, methodcaller
 from dfdone.enums import (
     Action,
     Classification,
+    Impact,
     Imperative,
     Probability,
     Risk,
@@ -103,6 +104,15 @@ class Element(Component):
 
 
 class Threat(Component):
+    RISK_MATRIX = {
+        1: Risk.LOW,
+        2: Risk.LOW,
+        3: Risk.LOW,
+        4: Risk.MEDIUM,
+        5: Risk.HIGH,
+        6: Risk.HIGH,
+        7: Risk.HIGH,
+    }
     def __init__(self, label, impact, probability, description):
         super().__init__(label, description)
         self.impact, self.probability = impact, probability
@@ -121,19 +131,24 @@ class Threat(Component):
     # Defauting to Classification.RESTRICTED effectively means that
     # only impact and probability will be significant in the calculation.
     def calculate_risk(self, classification=Classification.RESTRICTED):
+        """
+        Calculates and assigns a low/medium/high risk value
+        based on the threat's impact and probability of exploitation,
+        taking into account the sensitivity of the affected data
+        as well as all security measures that have been verified.
+        """
+        _probability = self.probability
         for m in self.measures:
             if m.status != Status.VERIFIED:
                 continue
-            self.probability = Probability(self.probability - m.capability)
-            if self.probability < Probability.LOW:
-                self.probability = Probability.LOW
-                break
-        r = (self.impact + self.probability + classification) / 3
-        if r < Risk.MEDIUM:
-            return Risk.LOW
-        if r == Risk.MEDIUM:
-            return Risk.MEDIUM
-        return Risk.HIGH
+            _probability -= m.capability
+        _probability = max(_probability, Probability.LOW)
+
+        _impact = self.impact
+        _impact += classification
+        _impact = max(_impact, Impact.LOW)
+        _impact = min(_impact, Impact.HIGH)
+        return Threat.RISK_MATRIX[_impact + _probability]
 
 
 class Measure(Component):
