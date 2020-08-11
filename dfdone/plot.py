@@ -18,7 +18,7 @@ THREAT = 'threat'
 def table_from_list(class_name, table_headers, table_rows):
     final_list = ['<thead>']
     for header in table_headers:
-        final_list.append(F'<th>{header}</th>')
+        final_list.append(F"<th>{header}</th>")
     final_list.append('</thead>')
     final_list.append('<tbody>')
     final_list.extend(table_rows)
@@ -43,17 +43,17 @@ def build_table_rows(class_prefix, component_list):
 
         style_class = ''
         if class_prefix == DATA:
-            style_class = F' classification-{c.classification.name.lower()}'
+            style_class = F" classification-{c.classification.name.lower()}"
         elif class_prefix == ASSUMPTION or class_prefix == THREAT:
-            style_class = F' risk-{c.calculate_risk().name.lower()}'
+            style_class = F" risk-{c.calculate_risk().name.lower()}"
         elif class_prefix == MEASURE:
-            style_class = F' capability-{c.capability.name.lower()}'
+            style_class = F" capability-{c.capability.name.lower()}"
 
         table_rows.append('<td>')
         table_rows.append((
             F'<div id="{id_format(c.label)}" '
             F'class="label {class_prefix}-label{style_class}">'
-            F'{c.label}</div>'
+            F"{c.label}</div>"
         ))
         table_rows.append('</td>')
 
@@ -79,7 +79,7 @@ def build_table_rows(class_prefix, component_list):
 
         table_rows.append('<td>')
         table_rows.append('<div class="{}">{}</div>'.format(
-            F'description {class_prefix}-description' if c.description
+            F"description {class_prefix}-description" if c.description
             else 'dash',
             c.description or '-'
         ))
@@ -143,7 +143,7 @@ def build_diagram(elements, interactions):
 
     for group, group_elements in groups.items():
         # Graphviz requirement: name must start with 'cluster'.
-        sub = Digraph(name=F'cluster_{group}')
+        sub = Digraph(name=F"cluster_{group}")
         sub.attr(label=group, style='filled', color='lightgrey')
         for e in group_elements:
             add_node(sub, e)
@@ -154,7 +154,7 @@ def build_diagram(elements, interactions):
         dot.edge(
             interaction.source.label,
             interaction.target.label,
-            label=F'({i_index + 1})',
+            label=F"({i_index + 1})",
             constraint=interaction.laterally
         )
 
@@ -167,13 +167,13 @@ def build_diagram(elements, interactions):
 
 
 def add_node(graph, element):
-    # Role defines shape of node
+    # Role defines node shape
     shape = {
         Role.SERVICE: 'oval',
         Role.STORAGE: 'box3d'
     }.get(element.role, 'box')
 
-    # set proper background + text contrast
+    # Set proper background + text contrast
     fillcolor, fontcolor = {
         Profile.BLACK: ('black', 'white'),
         Profile.GREY: ('grey', 'black')
@@ -191,7 +191,7 @@ def add_node(graph, element):
 
 
 def build_threats_cell(threats, classification, interaction_table, rowspan=1):
-    interaction_table.append(F'<td rowspan={rowspan}>')
+    interaction_table.append(F"<td rowspan={rowspan}>")
     for t in threats:
         risk_level = t.calculate_risk(classification).name.lower()
         interaction_table.append((
@@ -203,8 +203,8 @@ def build_threats_cell(threats, classification, interaction_table, rowspan=1):
                 continue
             interaction_table.append((
                 '<div class="label mitigation-label '
-                F'imperative-{m.imperative.name.lower()} '
-                F'capability-{m.capability.name.lower()} '
+                F"imperative-{m.imperative.name.lower()} "
+                F"capability-{m.capability.name.lower()} "
                 F'status-{m.status.name.lower()}">'
                 F'<a href="#{id_format(m.label)}">{m.label}</a></div>'
             ))
@@ -221,7 +221,7 @@ def build_interaction_table(interactions):
         interaction_table.append((
             F'<td rowspan="{interaction_rowspan}">'
             '<div class="row-number interaction-number">'
-            F'{i_index + 1}</div></td>'
+            F"{i_index + 1}</div></td>"
         ))
 
         di = 0

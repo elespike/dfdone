@@ -22,7 +22,7 @@ class Component:
 
     def __str__(self):
         if self.description:
-            return F'{self.label}: {self.description}'
+            return F"{self.label}: {self.description}"
         return self.label
 
 
@@ -48,9 +48,6 @@ class Interaction:
                 reverse=True
             )
         }
-        self.highest_classification = max(
-            d.classification for d in data_threats)
-
         self.data_threats = data_threats
         self.broad_threats = broad_threats
 
@@ -60,6 +57,10 @@ class Interaction:
             # is the opposite: it calculates a new "rank" when set to 'true'.
             not laterally
         )
+
+    @property
+    def highest_classification(self):
+        return max(d.classification for d in self.data_threats)
 
 
 class Element(Component):
@@ -113,6 +114,7 @@ class Threat(Component):
         6: Risk.HIGH,
         7: Risk.HIGH,
     }
+
     def __init__(self, label, impact, probability, description):
         super().__init__(label, description)
         self.impact, self.probability = impact, probability
