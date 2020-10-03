@@ -1,0 +1,22 @@
+"agent 1" is a black-box agent
+"service 1" is a white-box service
+"storage 1" is a white-box storage
+
+
+"data 1" is confidential data
+"data 2" is public data
+
+"threat 1" is a high impact, high probability threat
+"threat 2" is a medium impact, medium probability threat
+
+"measure 1" is a partial measure against "threat 1"
+"measure 2" is a full measure against "threat 1"
+
+"alias 1" is "service 1"
+
+"element group" is "service 1", "storage 1"
+"threat group" is "threat 1", "threat 2"
+"data group" is "data 1", "data 2"
+"invalid group" is "service 1", "threat 1"
+
+"agent 1" sends "data group" to "element group", risking "threat group"

@@ -43,9 +43,18 @@ class Parser:
             self.directory = Path().resolve()
         self.exercise_directives(Parser.parse_file(model_file))
 
-    # TODO tests
     @staticmethod
     def parse_file(model_file):
+        """
+        Parses a file (or data stream) according to DFDone's defined grammar
+        and returns a list of pyparsing.ParseResults.
+        >>> from io import StringIO  # to simulate a file
+        >>> data = '"DB" is a white-box storage'
+        >>> with StringIO(data) as model_file:
+        ...     Parser.parse_file(model_file)
+        ...
+        [(['DB', 'is a', 'white-box', 'storage'], {'label': ['DB'], 'profile': ['white'], 'role': ['storage']})]
+        """
         data = model_file.read()
         results = [
             result for c in constructs.values()
@@ -53,8 +62,15 @@ class Parser:
         ]
         return results
 
-    # TODO tests
     def compile_components(self, component_list):
+        """
+        Given component_list, which is a list of chosen labels defined in
+        the model file, returns a corresponding Component list.
+        See dfdone/tests/test_constructs.tml for component definitions.
+        >>> label_list = ['agent 1', 'alias 1', 'data group', 'inexistent', '']
+        >>> sorted(parser.compile_components(label_list), key=lambda c: c.label)
+        [agent 1, data 1, data 2, service 1]
+        """
         components = list()
         for c in component_list:
             label = c
@@ -65,11 +81,21 @@ class Parser:
                 components.append(self.components[label])
         return components
 
-    # TODO tests
     def get_component_type(self, label):
-        types = set()
-        for c in self.compile_components([label]):
-            types.add(type(c))
+        """
+        Given a string that represents a label defined in a model file,
+        returns the type of that component or component group.
+        If the label refers to a component group, and not all group members
+        are of the same type, returns None.
+        See dfdone/tests/test_constructs.tml for component definitions.
+        >>> parser.get_component_type('agent 1')  # single component
+        <class 'dfdone.components.Element'>
+        >>> parser.get_component_type('threat group')  # component group
+        <class 'dfdone.components.Threat'>
+        >>> parser.get_component_type('invalid group 1') is None
+        True
+        """
+        types = {type(c) for c in self.compile_components([label])}
         return types.pop() if len(types) == 1 else None
 
     def exercise_directives(self, parsed_results):
@@ -132,8 +158,33 @@ class Parser:
         for c in self.compile_components(exceptions):
             self.component_groups[group_label].remove(c)
 
-    # TODO tests?
     def build_component(self, parsed_result):
+        """
+        Given a pyparsing.ParseResults, adds the equivalent Component
+        to self.components, or a Component group to self.component_groups.
+        If a group contains different component types, it won't be added.
+        See dfdone/tests/test_constructs.tml for component definitions.
+        >>> for result in Parser.parse_file(model_file):
+        ...     parser.build_component(result)
+        ...
+        >>> expected_keys = [
+        ...     'agent 1',
+        ...     'service 1',
+        ...     'storage 1',
+        ...     'data 1',
+        ...     'data 2',
+        ...     'threat 1',
+        ...     'threat 2',
+        ...     'measure 1'
+        ... ]
+        >>> all(parser.components[k].label == k for k in expected_keys)
+        True
+        >>> print(sorted(parser.component_groups['data group'], key=lambda c: c.label))
+        [data 1, data 2]
+        >>> 'invalid group' in parser.component_groups
+        False
+        """
+
         if parsed_result.role:
             self.build_element(parsed_result)
         elif parsed_result.classification:
@@ -145,13 +196,13 @@ class Parser:
 
         elif parsed_result.label_list:
             group = list()
-            self.component_groups[parsed_result.label] = group
             group_members = self.compile_components(parsed_result.label_list)
             if all(
                 type(a) == type(b)
                 for a, b in combinations(group_members, 2)
             ):
                 group.extend(list(set(group_members)))
+                self.component_groups[parsed_result.label] = group
             else:
                 # TODO issue warning, when logging is in place
                 pass
@@ -195,13 +246,16 @@ class Parser:
         )
 
     def build_measure(self, parsed_result):
+        mitigable_threats = self.compile_components(parsed_result.threat_list)
+        if not mitigable_threats:
+            return
         measure = Measure(
             parsed_result.label,
             get_property(parsed_result.capability, Capability),
             parsed_result.description
         )
         self.components[parsed_result.label] = measure
-        for threat in self.compile_components(parsed_result.threat_list):
+        for threat in mitigable_threats:
             threat._measures.add(measure)
             measure._threats.add(threat)
 
@@ -310,8 +364,39 @@ class Parser:
             for target in self.compile_components([subject]):
                 target.stores(*args)
 
-    # TODO tests
     def apply_measures(self, parsed_result):
+        """
+        Applies security measures to specified interactions and data,
+        modifying affected Measure objects with appropriate flags.
+        See dfdone/tests/test_constructs.tml for component definitions.
+        >>> from io import StringIO
+        >>> data = [
+        ...     '"measure 1" has been verified on all data between all nodes',
+        ...     '"measure 2" must be implemented on all data between all nodes',
+        ... ]
+        >>> mitigations = StringIO('\\n'.join(data))
+        >>> for result in Parser.parse_file(mitigations):
+        ...     parser.apply_measures(result)
+        ...
+        >>> for interaction in yield_interactions(parser.components):
+        ...     # Since measures were applied "on all data",
+        ...     # they'll be found in interaction.broad_threats
+        ...     # (as opposed to interaction.data_threats).
+        ...     for threat in interaction.broad_threats:
+        ...         for measure in threat.measures:
+        ...             if measure.label == 'measure 1':
+        ...                 assert measure.active
+        ...                 assert measure.status == Status.VERIFIED
+        ...                 assert measure.imperative == Imperative.NONE
+        ...             elif measure.label == 'measure 2':
+        ...                 assert measure.active
+        ...                 assert measure.status == Status.PENDING
+        ...                 assert measure.imperative == Imperative.MUST
+        ...             else:
+        ...                 # No other mitigations should exist.
+        ...                 assert False
+        """
+
         measure_labels = set(
             c.label for c in self.compile_components([parsed_result.label])
         )
@@ -346,14 +431,16 @@ class Parser:
 
         for i in affected_interactions:
             target_measures = list()
+            all_data_affected = True
             for data, threats in i.data_threats.items():
                 if data not in affected_data:
+                    all_data_affected = False
                     continue
                 target_measures.extend(filter(
                     lambda m: m.label in measure_labels,
                     (m for t in threats for m in t.measures)
                 ))
-            if all(data in affected_data for data in i.data_threats):
+            if all_data_affected:
                 target_measures.extend(filter(
                     lambda m: m.label in measure_labels,
                     (m for t in i.broad_threats for m in t.measures)
@@ -363,7 +450,6 @@ class Parser:
                 zip(target_measures, (parsed_result for m in target_measures))
             ): pass
 
-    # TODO tests
     def compile_element_pairs(self, element_list, element_pair_list):
         pairs = list()
         for e in self.compile_components(element_list):

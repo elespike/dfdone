@@ -1,7 +1,7 @@
 from dfdone.components import (
     Datum,
     Element,
-    Interaction,
+    Interaction,  # for the yield_interactions tests.
     Measure,
     Threat,
 )

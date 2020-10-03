@@ -1,9 +1,12 @@
 from pathlib import Path
 
 
-EXAMPLE_DIR_PATH = Path(
-    F"{Path(__file__).resolve().parent}/../../examples"
-).resolve()
+TEST_DIR_PATH = Path(__file__).resolve().parent
+
+with TEST_DIR_PATH.joinpath('test_constructs.tml').open() as f:
+    TEST_TML_DATA = f.read()
+
+EXAMPLE_DIR_PATH = Path(F"{TEST_DIR_PATH}/../../examples").resolve()
 
 with EXAMPLE_DIR_PATH.joinpath('getting_started.tml').open() as f:
     EXAMPLE_TML_DATA = f.read()
