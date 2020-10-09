@@ -176,7 +176,7 @@ def add_node(graph, element):
     # Set proper background + text contrast
     fillcolor, fontcolor = {
         Profile.BLACK: ('black', 'white'),
-        Profile.GREY: ('grey', 'black')
+        Profile.GREY: ('grey', 'white')
     }.get(element.profile, ('white', 'black'))
 
     graph.node(
@@ -184,7 +184,7 @@ def add_node(graph, element):
         label=element.label,
         shape=shape,
         style='filled',
-        color=fontcolor,
+        color='black',
         fontcolor=fontcolor,
         fillcolor=fillcolor
     )
