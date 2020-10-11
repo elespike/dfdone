@@ -14,8 +14,13 @@ from dfdone.enums import (
 
 class Component:
     def __init__(self, label, description):
-        self.label = label
+        self._id = label  # the original label will serve as a read-only ID
+        self.label = label  # this label property can be modified
         self.description = description
+
+    @property
+    def id(self):
+        return self._id
 
     def __repr__(self):
         return self.label

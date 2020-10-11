@@ -1,5 +1,6 @@
 from collections import defaultdict as ddict
 from operator import attrgetter, methodcaller
+from string import punctuation
 
 from graphviz import Digraph
 
@@ -27,8 +28,9 @@ def table_from_list(class_name, table_headers, table_rows):
     return F'\n\n<table class="{class_name}">\n{table_body}\n</table>'
 
 
+slugify = str.maketrans(' ', '-', punctuation)
 def id_format(label):
-    return label.replace(' ', '-').lower()
+    return label.lower().replace('-', ' ').translate(slugify)
 
 
 def build_table_rows(class_prefix, component_list):
@@ -51,7 +53,7 @@ def build_table_rows(class_prefix, component_list):
 
         table_rows.append('<td>')
         table_rows.append((
-            F'<div id="{id_format(c.label)}" '
+            F'<div id="{id_format(c.id)}" '
             F'class="label {class_prefix}-label{style_class}">'
             F"{c.label}</div>"
         ))
@@ -63,7 +65,7 @@ def build_table_rows(class_prefix, component_list):
                 table_rows.append((
                     '<div class="label measure-label '
                     F'capability-{m.capability.name.lower()}">'
-                    F'<a href="#{id_format(m.label)}">{m.label}</a></div>'
+                    F'<a href="#{id_format(m.id)}">{m.label}</a></div>'
                 ))
             table_rows.append('</td>')
 
@@ -73,7 +75,7 @@ def build_table_rows(class_prefix, component_list):
                 table_rows.append((
                     '<div class="label threat-label '
                     F'risk-{t.calculate_risk().name.lower()}">'
-                    F'<a href="#{id_format(t.label)}">{t.label}</a></div>'
+                    F'<a href="#{id_format(t.id)}">{t.label}</a></div>'
                 ))
             table_rows.append('</td>')
 
@@ -130,9 +132,37 @@ def build_measure_table(measures):
     )
 
 
+def organize_elements(graph, elements):
+    central_elements = max([
+        [e for e in elements if e.profile == Profile.BLACK],
+        [e for e in elements if e.profile == Profile.GREY],
+        [e for e in elements if e.profile == Profile.WHITE],
+    ], key=lambda l: len(l))
+
+    if not central_elements:
+        return
+
+    row_count = max(2, len(central_elements) // 2)
+    row_subgraph = Digraph(name='rows')
+    for i in range(1, row_count):
+        row_subgraph.edge(F"{i}", F"{i+1}", style='invis')
+    row_subgraph.node_attr.update(style='invis', shape='plain')
+    graph.subgraph(row_subgraph)
+
+    for i in range(row_count):
+        rank_subgraph = Digraph()
+        rank_subgraph.attr(rank='same')
+        for e in central_elements[i::row_count]:
+            rank_subgraph.node(F"{i+1}")
+            rank_subgraph.node(e.id)
+        graph.subgraph(rank_subgraph)
+
+
 def build_diagram(elements, interactions):
+    elements = list(elements)  # to be able to iterate more than once.
     dot = Digraph(format='svg')
-    dot.attr(rankdir='TB')
+    dot.attr(rankdir='TB', newrank='false')
+    organize_elements(dot, elements)
 
     groups = ddict(list)
     for e in elements:
@@ -152,9 +182,10 @@ def build_diagram(elements, interactions):
     _interactions = sorted(interactions, key=attrgetter('created'))
     for i_index, interaction in enumerate(_interactions):
         dot.edge(
-            interaction.source.label,
-            interaction.target.label,
-            label=F"({i_index + 1})",
+            interaction.source.id,
+            interaction.target.id,
+            label=F"  {i_index + 1} ",
+            decorate='true',
             constraint=interaction.laterally
         )
 
@@ -176,11 +207,11 @@ def add_node(graph, element):
     # Set proper background + text contrast
     fillcolor, fontcolor = {
         Profile.BLACK: ('black', 'white'),
-        Profile.GREY: ('grey', 'white')
+        Profile.GREY: ('dimgrey', 'white')
     }.get(element.profile, ('white', 'black'))
 
     graph.node(
-        element.label,
+        element.id,
         label=element.label,
         shape=shape,
         style='filled',
@@ -196,7 +227,7 @@ def build_threats_cell(threats, classification, interaction_table, rowspan=1):
         risk_level = t.calculate_risk(classification).name.lower()
         interaction_table.append((
             F'<div class="label threat-label risk-{risk_level}">'
-            F'<a href="#{id_format(t.label)}">{t.label}</a></div>'
+            F'<a href="#{id_format(t.id)}">{t.label}</a></div>'
         ))
         for m in t.measures:
             if not m.active:
@@ -206,7 +237,7 @@ def build_threats_cell(threats, classification, interaction_table, rowspan=1):
                 F"imperative-{m.imperative.name.lower()} "
                 F"capability-{m.capability.name.lower()} "
                 F'status-{m.status.name.lower()}">'
-                F'<a href="#{id_format(m.label)}">{m.label}</a></div>'
+                F'<a href="#{id_format(m.id)}">{m.label}</a></div>'
             ))
     interaction_table.append('</td>')
 
@@ -231,7 +262,7 @@ def build_interaction_table(interactions):
             interaction_table.append((
                 F'<td><div class="label data-label '
                 F'classification-{datum.classification.name.lower()}">'
-                F'<a href="#{id_format(datum.label)}">{datum.label}</a>'
+                F'<a href="#{id_format(datum.id)}">{datum.label}</a>'
                 '</div></td>'
             ))
 
