@@ -186,7 +186,6 @@ def build_diagram(elements, interactions):
             interaction.target.id,
             label=F"  {i_index + 1} ",
             decorate='true',
-            constraint=interaction.laterally
         )
 
     # Return the SVG source:

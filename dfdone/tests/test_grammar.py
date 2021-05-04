@@ -267,8 +267,7 @@ class TestGrammar(unittest.TestCase):
             ['1.', '(1)', '1)', '1 -'],
             # Subject
             ['"Element ""One"""'],
-            # Literal 'laterally'
-            ['laterally'],
+            # Actions
             ['sends', 'receives', 'stores'],
             # Effect list
             [(

@@ -39,7 +39,7 @@ class Datum(Component):
 
 class Interaction:
     def __init__(self, timestamp, action, source, target,
-                 data_threats, broad_threats, notes, laterally):
+                 data_threats, broad_threats, notes):
         self.created = timestamp
         self.action = action
         self.source = source
@@ -57,11 +57,6 @@ class Interaction:
         self.broad_threats = broad_threats
 
         self.notes = notes
-        self.laterally = str(  # graphviz attributes are all strings.
-            # Using 'not laterally' because the 'constraint' graphviz attribute
-            # is the opposite: it calculates a new "rank" when set to 'true'.
-            not laterally
-        )
 
     @property
     def highest_classification(self):
@@ -78,7 +73,7 @@ class Element(Component):
 
     @staticmethod
     def interact(action, source, destination,
-                 data_threats, broad_threats, notes, laterally):
+                 data_threats, broad_threats, notes):
         source.interactions.append(Interaction(
             dt.utcnow().timestamp(),
             action,
@@ -86,27 +81,26 @@ class Element(Component):
             destination,
             data_threats,
             broad_threats,
-            notes,
-            laterally
+            notes
         ))
 
-    def processes(self, data_threats, broad_threats, notes, laterally):
+    def processes(self, data_threats, broad_threats, notes):
         Element.interact(Action.PROCESS, self, self,
-                         data_threats, broad_threats, notes, laterally)
+                         data_threats, broad_threats, notes)
 
     def receives(self, source_element,
-                 data_threats, broad_threats, notes, laterally):
+                 data_threats, broad_threats, notes):
         Element.interact(Action.RECEIVE, source_element, self,
-                         data_threats, broad_threats, notes, laterally)
+                         data_threats, broad_threats, notes)
 
     def sends(self, destination_element,
-              data_threats, broad_threats, notes, laterally):
+              data_threats, broad_threats, notes):
         Element.interact(Action.SEND, self, destination_element,
-                         data_threats, broad_threats, notes, laterally)
+                         data_threats, broad_threats, notes)
 
-    def stores(self, data_threats, broad_threats, notes, laterally):
+    def stores(self, data_threats, broad_threats, notes):
         Element.interact(Action.STORE, self, self,
-                         data_threats, broad_threats, notes, laterally)
+                         data_threats, broad_threats, notes)
 
 
 class Threat(Component):

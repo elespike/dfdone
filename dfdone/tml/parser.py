@@ -326,8 +326,7 @@ class Parser:
             parsed_result.object,
             data_threats,
             broad_threats,
-            parsed_result.notes,
-            parsed_result.laterally.isalpha()
+            parsed_result.notes
         )
 
     def build_datum_threats(self, effect, data_threats):

@@ -54,7 +54,6 @@ DESCRIBED = CaselessKeyword('described')
 DISPROVE  = CaselessKeyword('disprove' )
 IN        = CaselessKeyword('in'       )
 INCLUDE   = CaselessKeyword('include'  )
-LATERALLY = CaselessKeyword('laterally').setResultsName('laterally')
 ON        = CaselessKeyword('on'       )
 THREAT    = CaselessKeyword('threat'   )
 
@@ -136,7 +135,7 @@ constructs = [
     # Negative assumptions which have not been disproven should incur risk.
     DISPROVE + ASSUMPTIONS,
     # Interaction
-    Optional(ORDINAL) + SUBJECT + Optional(LATERALLY) + ACTION + EFFECT_LIST
+    Optional(ORDINAL) + SUBJECT + ACTION + EFFECT_LIST
     + Optional(TO_FROM + OBJECT)
     + Optional(Optional(BROADLY) + RISKING + THREAT_LIST)
     + Optional(WITH_NOTES + NOTES),
