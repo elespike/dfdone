@@ -45,16 +45,16 @@ def build_table_rows(class_prefix, component_list):
 
         style_class = ''
         if class_prefix == DATA:
-            style_class = F" classification-{c.classification.name.lower()}"
+            style_class = F"classification-{c.classification.name.lower()}"
         elif class_prefix == ASSUMPTION or class_prefix == THREAT:
-            style_class = F" risk-{c.calculate_risk().name.lower()}"
+            style_class = F"risk-{c.calculate_risk().name.lower()}"
         elif class_prefix == MEASURE:
-            style_class = F" capability-{c.capability.name.lower()}"
+            style_class = F"capability-{c.capability.name.lower()}"
 
         table_rows.append('<td>')
         table_rows.append((
             F'<div id="{id_format(c.id)}" '
-            F'class="label {class_prefix}-label{style_class}">'
+            F'class="label {class_prefix}-label {style_class}">'
             F"{c.label}</div>"
         ))
         table_rows.append('</td>')
@@ -83,7 +83,7 @@ def build_table_rows(class_prefix, component_list):
         table_rows.append('<div class="{}">{}</div>'.format(
             F"description {class_prefix}-description" if c.description
             else 'dash',
-            c.description or '-'
+            c.description.replace('\n', '<br>') or '-'
         ))
         table_rows.append('</td>')
         table_rows.append('</tr>')
@@ -294,7 +294,7 @@ def build_interaction_table(interactions):
                 interaction_table.append('<div class="{}">{}</div>'.format(
                     'interaction-notes' if interaction.notes
                     else 'dash',
-                    interaction.notes or '-'
+                    interaction.notes.replace('\n', '<br>') or '-'
                 ))
                 interaction_table.append('</td>')
 
