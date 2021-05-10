@@ -209,6 +209,12 @@ def add_node(graph, element):
         Profile.GREY: ('dimgrey', 'white')
     }.get(element.profile, ('white', 'black'))
 
+    if element.description:
+        tooltip = [l.strip() for l in element.description.strip().splitlines()]
+        tooltip = '\n'.join(tooltip)
+    else:
+        tooltip = element.label
+
     graph.node(
         element.id,
         label=element.label,
@@ -216,7 +222,8 @@ def add_node(graph, element):
         style='filled',
         color='black',
         fontcolor=fontcolor,
-        fillcolor=fillcolor
+        fillcolor=fillcolor,
+        tooltip=tooltip,
     )
 
 
