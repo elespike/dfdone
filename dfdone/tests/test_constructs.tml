@@ -2,9 +2,11 @@
 "service 1" is a white-box service
 "storage 1" is a white-box storage
 
-
 "data 1" is confidential data
 "data 2" is public data
+
+# To test that labels can be the same, but IDs remain unique:
+"data 2" is now labeled "data 1"
 
 "threat 1" is a high impact, high probability threat
 "threat 2" is a medium impact, medium probability threat

@@ -1,6 +1,7 @@
 from functools import partial
 from io import StringIO
 from pathlib import Path
+from sys import exit, stdout
 
 import argparse
 
@@ -10,6 +11,9 @@ from dfdone.tml.parser import Parser
 
 
 def build_arg_parser(testing=False):
+    EXAMPLE = '\N{ESC}[7mEXAMPLE\N{ESC}[0m'
+    DEFAULT = '\N{ESC}[7mDEFAULT\N{ESC}[0m'
+
     model_file_kwargs = {
         'type': argparse.FileType('r') if not testing else StringIO,
         'metavar': 'MODEL_FILE',
@@ -31,9 +35,9 @@ def build_arg_parser(testing=False):
             'Include specified information in the output. Options are:\n'
             'assumptions, data, threats, measures, diagram, interactions.\n'
             'Options can be repeated, and their order will be respected.\n'
-            'Example: "-i diagram data diagram threats" outputs the diagram,\n'
+            F"{EXAMPLE} \"-i diagram data diagram threats\" outputs the diagram,\n"
             'then the data table, then the diagram again, then the threat table.\n'
-            F"Default: \"{' '.join(i_defaults)}\"."
+            F"{DEFAULT} \"{' '.join(i_defaults)}\"."
         ),
     }
 
@@ -44,9 +48,8 @@ def build_arg_parser(testing=False):
         'help': (
             'Excludes specified information from the output.\n'
             F"Same options as {i_kwargs['metavar']}. Order does not matter.\n"
-            'Useful to exclude specific portions '
-            F"from the default set of {i_kwargs['metavar']}.\n"
-            'Example: "-x diagram -x data" outputs the assumption table,\n'
+            F"Useful to exclude specific portions from the default set of {i_kwargs['metavar']}.\n"
+            F"{EXAMPLE} \"-x diagram data\" outputs the assumption table,\n"
             'skips the data table, adds the threats and measures tables,\n'
             'skips the diagram, and finally adds the interactions table.'
         ),
@@ -62,13 +65,25 @@ def build_arg_parser(testing=False):
         'metavar': 'CSS_FILE',
         'help': (
             'CSS file to include inline at the beginning of the output.\n'
-            F"Default: {default_css_path}"
+            F"{DEFAULT} {default_css_path}"
         ),
     }
 
     no_css_kwargs = {
         'action': 'store_true',
         'help': 'Do not include any CSS inline.',
+    }
+
+    diagram_kwargs = {
+        'metavar': 'FORMAT',
+        'help': (
+            'Ignores all other options and outputs only the diagram\n'
+            'in the specified format, if Graphviz supports it.\n'
+            'Common supported formats are: dot, jpg, pdf, png, svg.\n'
+            'See the following page for all supported formats:\n'
+            'https://www.graphviz.org/doc/info/output.html\n'
+            F"{EXAMPLE} \"--diagram dot\" outputs only the diagram, in DOT format."
+        ),
     }
 
     parser = argparse.ArgumentParser(
@@ -80,6 +95,7 @@ def build_arg_parser(testing=False):
     parser.add_argument('-x', '--exclude', **x_kwargs)
     parser.add_argument('--css', **css_kwargs)
     parser.add_argument('--no-css', **no_css_kwargs)
+    parser.add_argument('--diagram', **diagram_kwargs)
     return parser
 
 
@@ -115,6 +131,11 @@ def main(args=None, return_html=False):
             cg.yield_interactions(tml_parser.components)
         ),
     }
+
+    if args.diagram is not None:
+        diagram = include_information['diagram'](fmt=args.diagram)
+        stdout.buffer.write(diagram)
+        exit(0)
 
     html = ''
     for info in filter(

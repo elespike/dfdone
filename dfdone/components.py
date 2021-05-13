@@ -23,7 +23,7 @@ class Component:
         return self._id
 
     def __repr__(self):
-        return self.label
+        return self.id
 
     def __str__(self):
         if self.description:

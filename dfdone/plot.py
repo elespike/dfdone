@@ -158,9 +158,9 @@ def organize_elements(graph, elements):
         graph.subgraph(rank_subgraph)
 
 
-def build_diagram(elements, interactions):
+def build_diagram(elements, interactions, fmt=None):
     elements = list(elements)  # to be able to iterate more than once.
-    dot = Digraph(format='svg')
+    dot = Digraph()
     dot.attr(rankdir='TB', newrank='false')
     organize_elements(dot, elements)
 
@@ -188,7 +188,12 @@ def build_diagram(elements, interactions):
             decorate='true',
         )
 
-    # Return the SVG source:
+    if fmt is not None:
+        dot.format = fmt
+        return dot.pipe()
+
+    # Return the wrapped SVG source:
+    dot.format = 'svg'
     return (
         '\n\n<div class="diagram">\n'
         F"{dot.pipe().decode('utf-8').strip()}\n"

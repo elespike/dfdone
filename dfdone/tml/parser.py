@@ -2,6 +2,8 @@ from copy import copy, deepcopy
 from itertools import combinations, starmap
 from pathlib import Path
 
+from pyparsing import ParseResults
+
 from dfdone.components import (
     Datum,
     Element,
@@ -67,36 +69,26 @@ class Parser:
         Given component_list, which is a list of chosen labels defined in
         the model file, returns a corresponding Component list.
         See dfdone/tests/test_constructs.tml for component definitions.
-        >>> label_list = ['agent 1', 'alias 1', 'data group', 'inexistent', '']
-        >>> sorted(parser.compile_components(label_list), key=lambda c: c.label)
-        [agent 1, data 1, data 2, service 1]
+        >>> id_list = ['agent 1', 'alias 1', 'data group', 'inexistent', '']
+        >>> components = parser.compile_components(id_list)
+        >>> components.sort(key=lambda c: c.id)
+        >>> for c in components:
+        ...     print(c.id, c.label)
+        ...
+        agent 1 agent 1
+        data 1 data 1
+        data 2 data 1
+        service 1 service 1
         """
         components = list()
         for c in component_list:
             label = c
-            if hasattr(c, 'label'):
+            if isinstance(c, ParseResults):
                 label = c.label
             components.extend(self.component_groups.get(label, []))
             if label in self.components:
                 components.append(self.components[label])
         return components
-
-    def get_component_type(self, label):
-        """
-        Given a string that represents a label defined in a model file,
-        returns the type of that component or component group.
-        If the label refers to a component group, and not all group members
-        are of the same type, returns None.
-        See dfdone/tests/test_constructs.tml for component definitions.
-        >>> parser.get_component_type('agent 1')  # single component
-        <class 'dfdone.components.Element'>
-        >>> parser.get_component_type('threat group')  # component group
-        <class 'dfdone.components.Threat'>
-        >>> parser.get_component_type('invalid group 1') is None
-        True
-        """
-        types = {type(c) for c in self.compile_components([label])}
-        return types.pop() if len(types) == 1 else None
 
     def exercise_directives(self, parsed_results):
         # "parsed_results" is sorted according to
@@ -104,6 +96,7 @@ class Parser:
         # which means that the order of "constructs"
         # is what dictates the order of operations.
         for r in parsed_results:
+            components = self.compile_components([r.label])
             if r.path:
                 self.include_file(r.path, r.label)
                 self.process_exceptions(r.exceptions, r.label)
@@ -112,11 +105,11 @@ class Parser:
             # Don't combine the two conditions below into a single one;
             # otherwise, modifications will be treated as individual threats.
             elif r.modify:
-                for c in self.compile_components([r.label]):
+                for c in components:
                     self.modify_component(r, c)
             elif r.action:
                 self.build_interaction(r)
-            elif self.get_component_type(r.label) == Measure:
+            elif components and all(isinstance(c, Measure) for c in components):
                 self.apply_measures(r)
             elif r.label:
                 self.build_component(r)
@@ -167,7 +160,7 @@ class Parser:
         >>> for result in Parser.parse_file(model_file):
         ...     parser.build_component(result)
         ...
-        >>> expected_keys = [
+        >>> expected_keys = {
         ...     'agent 1',
         ...     'service 1',
         ...     'storage 1',
@@ -175,11 +168,12 @@ class Parser:
         ...     'data 2',
         ...     'threat 1',
         ...     'threat 2',
-        ...     'measure 1'
-        ... ]
-        >>> all(parser.components[k].label == k for k in expected_keys)
+        ...     'measure 1',
+        ...     'measure 2',
+        ... }
+        >>> set(parser.components.keys()) == expected_keys
         True
-        >>> print(sorted(parser.component_groups['data group'], key=lambda c: c.label))
+        >>> sorted(parser.component_groups['data group'], key=lambda c: c.id)
         [data 1, data 2]
         >>> 'invalid group' in parser.component_groups
         False
@@ -383,11 +377,11 @@ class Parser:
         ...     # (as opposed to interaction.data_threats).
         ...     for threat in interaction.broad_threats:
         ...         for measure in threat.measures:
-        ...             if measure.label == 'measure 1':
+        ...             if measure.id == 'measure 1':
         ...                 assert measure.active
         ...                 assert measure.status == Status.VERIFIED
         ...                 assert measure.imperative == Imperative.NONE
-        ...             elif measure.label == 'measure 2':
+        ...             elif measure.id == 'measure 2':
         ...                 assert measure.active
         ...                 assert measure.status == Status.PENDING
         ...                 assert measure.imperative == Imperative.MUST
@@ -396,8 +390,8 @@ class Parser:
         ...                 assert False
         """
 
-        measure_labels = set(
-            c.label for c in self.compile_components([parsed_result.label])
+        measure_ids = set(
+            c.id for c in self.compile_components([parsed_result.label])
         )
         affected_pairs = self.compile_element_pairs(
             parsed_result.element_list,
@@ -436,12 +430,12 @@ class Parser:
                     all_data_affected = False
                     continue
                 target_measures.extend(filter(
-                    lambda m: m.label in measure_labels,
+                    lambda m: m.id in measure_ids,
                     (m for t in threats for m in t.measures)
                 ))
             if all_data_affected:
                 target_measures.extend(filter(
-                    lambda m: m.label in measure_labels,
+                    lambda m: m.id in measure_ids,
                     (m for t in i.broad_threats for m in t.measures)
                 ))
             for _ in starmap(

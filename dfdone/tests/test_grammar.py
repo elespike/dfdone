@@ -58,7 +58,8 @@ class TestGrammar(unittest.TestCase):
             # Group
             ['in "the ""awesome"" group"'],
             # Description
-            ['described as "automatically makes things awesome"']
+            ['described as "automatically makes things awesome"',
+             'described as "this\n\tis\n\tmulti\n\tline"']
         ]
         self.run_tests(
             constructs['element'],
@@ -285,7 +286,7 @@ class TestGrammar(unittest.TestCase):
             # Notes
             ['with note', ';\n\twith notes', 'note',
              'note that', 'noting that'],
-            ['"this is of great concern"']
+            ['"this is of great concern"', '"this\n\tis\n\tmulti\n\tline"']
         ]
         self.run_tests(
             constructs['interaction'],
