@@ -55,6 +55,11 @@ def build_arg_parser(testing=False):
         ),
     }
 
+    no_numbers_kwargs = {
+        'action': 'store_true',
+        'help': 'Omits the numbers next to each arrow in the diagram.',
+    }
+
     default_css_path = Path(
         F"{Path(__file__).resolve().parent}/../static/default.css"
     ).resolve()
@@ -77,8 +82,7 @@ def build_arg_parser(testing=False):
     diagram_kwargs = {
         'metavar': 'FORMAT',
         'help': (
-            'Ignores all other options and outputs only the diagram\n'
-            'in the specified format, if Graphviz supports it.\n'
+            'Outputs only the diagram in the specified format.\n'
             'Common supported formats are: dot, jpg, pdf, png, svg.\n'
             'See the following page for all supported formats:\n'
             'https://www.graphviz.org/doc/info/output.html\n'
@@ -93,6 +97,7 @@ def build_arg_parser(testing=False):
     parser.add_argument('model_file', **model_file_kwargs)
     parser.add_argument('-i', '--include', **i_kwargs)
     parser.add_argument('-x', '--exclude', **x_kwargs)
+    parser.add_argument('--no-numbers', **no_numbers_kwargs)
     parser.add_argument('--css', **css_kwargs)
     parser.add_argument('--no-css', **no_css_kwargs)
     parser.add_argument('--diagram', **diagram_kwargs)
@@ -124,7 +129,8 @@ def main(args=None, return_html=False):
         'diagram': partial(
             plot.build_diagram,
             cg.yield_elements(tml_parser.components),
-            cg.yield_interactions(tml_parser.components)
+            cg.yield_interactions(tml_parser.components),
+            omit_numbers=args.no_numbers,
         ),
         'interactions': partial(
             plot.build_interaction_table,

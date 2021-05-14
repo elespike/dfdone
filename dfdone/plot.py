@@ -158,7 +158,7 @@ def organize_elements(graph, elements):
         graph.subgraph(rank_subgraph)
 
 
-def build_diagram(elements, interactions, fmt=None):
+def build_diagram(elements, interactions, fmt=None, omit_numbers=False):
     elements = list(elements)  # to be able to iterate more than once.
     dot = Digraph()
     dot.attr(rankdir='TB', newrank='false')
@@ -174,18 +174,30 @@ def build_diagram(elements, interactions, fmt=None):
     for group, group_elements in groups.items():
         # Graphviz requirement: name must start with 'cluster'.
         sub = Digraph(name=F"cluster_{group}")
-        sub.attr(label=group, style='filled', color='lightgrey')
+        sub.attr(label=group, tooltip=group, style='filled', color='lightgrey')
         for e in group_elements:
             add_node(sub, e)
         dot.subgraph(sub)
 
     _interactions = sorted(interactions, key=attrgetter('created'))
+    attributes = dict()
     for i_index, interaction in enumerate(_interactions):
+        data_ids = sorted([str(d) for d in interaction.data_threats])
+        tooltip = '\n'.join(data_ids)
+        attributes = {
+            'edgetooltip': tooltip,
+            'URL': F"#interaction-{i_index + 1}",
+        }
+        if not omit_numbers:
+            attributes.update({
+                'label': F"  {i_index + 1} ",
+                'labeltooltip': tooltip,
+                'decorate': 'true',
+            })
         dot.edge(
             interaction.source.id,
             interaction.target.id,
-            label=F"  {i_index + 1} ",
-            decorate='true',
+            _attributes=attributes,
         )
 
     if fmt is not None:
@@ -195,7 +207,7 @@ def build_diagram(elements, interactions, fmt=None):
     # Return the wrapped SVG source:
     dot.format = 'svg'
     return (
-        '\n\n<div class="diagram">\n'
+        '\n\n<div id="diagram">\n'
         F"{dot.pipe().decode('utf-8').strip()}\n"
         '</div>'
     )
@@ -214,12 +226,6 @@ def add_node(graph, element):
         Profile.GREY: ('dimgrey', 'white')
     }.get(element.profile, ('white', 'black'))
 
-    if element.description:
-        tooltip = [l.strip() for l in element.description.strip().splitlines()]
-        tooltip = '\n'.join(tooltip)
-    else:
-        tooltip = element.label
-
     graph.node(
         element.id,
         label=element.label,
@@ -228,7 +234,7 @@ def add_node(graph, element):
         color='black',
         fontcolor=fontcolor,
         fillcolor=fillcolor,
-        tooltip=tooltip,
+        tooltip='\n'.join([l.strip() for l in str(element).splitlines()]),
     )
 
 
@@ -262,8 +268,8 @@ def build_interaction_table(interactions):
         interaction_table.append('<tr>')
         interaction_table.append((
             F'<td rowspan="{interaction_rowspan}">'
-            '<div class="row-number interaction-number">'
-            F"{i_index + 1}</div></td>"
+            F'<div id="interaction-{i_index + 1}" class="row-number interaction-number">'
+            F"<a href=#diagram>{i_index + 1}</a></div></td>"
         ))
 
         di = 0

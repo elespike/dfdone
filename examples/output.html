@@ -1,4 +1,8 @@
 <style>
+.label:target, .row-number:target {
+  border: black 2pt dotted;
+}
+
 table {
   border-collapse: collapse;
 }
@@ -17,7 +21,7 @@ td {
   border: 1px solid black;
 }
 
-div.diagram {
+#diagram {
 }
 
 div.label {
@@ -330,7 +334,7 @@ div.dash {
 </tbody>
 </table>
 
-<div class="diagram">
+<div id="diagram">
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
@@ -369,10 +373,16 @@ div.dash {
 <!-- Web App&#45;&gt;DB -->
 <g id="edge3" class="edge">
 <title>Web App&#45;&gt;DB</title>
+<g id="a_edge3"><a xlink:href="#interaction-2" xlink:title="pw&#10;un">
 <path fill="none" stroke="#000000" d="M77.7667,-88.2173C72.867,-82.514 67.9151,-75.8427 64.5,-69 60.9814,-61.9499 58.47,-53.8315 56.6871,-46.175"/>
 <polygon fill="#000000" stroke="#000000" points="60.0778,-45.2818 54.6813,-36.1644 53.2142,-46.6571 60.0778,-45.2818"/>
+</a>
+</g>
+<g id="a_edge3&#45;label"><a xlink:href="#interaction-2" xlink:title="pw&#10;un">
 <text text-anchor="middle" x="74" y="-57.8" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;2 </text>
 <polyline fill="none" stroke="#000000" points="83.5,-54 64.5,-54 63.2272,-66.3091 "/>
+</a>
+</g>
 </g>
 <!-- User -->
 <g id="node5" class="node">
@@ -386,18 +396,30 @@ div.dash {
 <!-- Web App&#45;&gt;User -->
 <g id="edge4" class="edge">
 <title>Web App&#45;&gt;User</title>
+<g id="a_edge4"><a xlink:href="#interaction-3" xlink:title="session cookie">
 <path fill="none" stroke="#000000" d="M89.4973,-86.8222C87.6745,-76.7519 87.0178,-64.2373 91.5,-54 93.1169,-50.3071 95.3201,-46.825 97.8622,-43.5895"/>
 <polygon fill="#000000" stroke="#000000" points="100.5693,-45.8157 104.7377,-36.0753 95.4049,-41.0902 100.5693,-45.8157"/>
+</a>
+</g>
+<g id="a_edge4&#45;label"><a xlink:href="#interaction-3" xlink:title="session cookie">
 <text text-anchor="middle" x="101" y="-57.8" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;3 </text>
 <polyline fill="none" stroke="#000000" points="110.5,-54 91.5,-54 91.519,-53.9567 "/>
+</a>
+</g>
 </g>
 <!-- User&#45;&gt;Web App -->
 <g id="edge2" class="edge">
 <title>User&#45;&gt;Web App</title>
+<g id="a_edge2"><a xlink:href="#interaction-1" xlink:title="pw&#10;un">
 <path fill="none" stroke="#000000" d="M125.746,-36.2615C122.9355,-46.1306 119.0397,-58.4266 114.5,-69 113.1742,-72.0878 111.6612,-75.2552 110.0742,-78.369"/>
 <polygon fill="#000000" stroke="#000000" points="106.8625,-76.9515 105.2053,-87.4159 113.0265,-80.2689 106.8625,-76.9515"/>
+</a>
+</g>
+<g id="a_edge2&#45;label"><a xlink:href="#interaction-1" xlink:title="pw&#10;un">
 <text text-anchor="middle" x="129" y="-57.8" font-family="Times,serif" font-size="14.00" fill="#000000"> &#160;1 </text>
 <polyline fill="none" stroke="#000000" points="138.5,-54 119.5,-54 118.9354,-57.6541 "/>
+</a>
+</g>
 </g>
 </g>
 </svg>
@@ -413,7 +435,7 @@ div.dash {
 </thead>
 <tbody>
 <tr>
-<td rowspan="2"><div class="row-number interaction-number">1</div></td>
+<td rowspan="2"><div id="interaction-1" class="row-number interaction-number"><a href=#diagram>1</a></div></td>
 <td><div class="label data-label classification-confidential"><a href="#pw">pw</a></div></td>
 <td rowspan=1>
 <div class="label threat-label risk-high"><a href="#command-injection">Command Injection</a></div>
@@ -434,7 +456,7 @@ div.dash {
 </td>
 </tr>
 <tr>
-<td rowspan="2"><div class="row-number interaction-number">2</div></td>
+<td rowspan="2"><div id="interaction-2" class="row-number interaction-number"><a href=#diagram>2</a></div></td>
 <td><div class="label data-label classification-confidential"><a href="#pw">pw</a></div></td>
 <td><div class="dash">-</div></td>
 <td rowspan=2>
@@ -450,7 +472,7 @@ div.dash {
 <td><div class="dash">-</div></td>
 </tr>
 <tr>
-<td rowspan="1"><div class="row-number interaction-number">3</div></td>
+<td rowspan="1"><div id="interaction-3" class="row-number interaction-number"><a href=#diagram>3</a></div></td>
 <td><div class="label data-label classification-restricted"><a href="#session-cookie">session cookie</a></div></td>
 <td><div class="dash">-</div></td>
 <td rowspan=1>

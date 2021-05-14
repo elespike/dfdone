@@ -1,3 +1,7 @@
+.label:target, .row-number:target {
+  border: black 2pt dotted;
+}
+
 table {
   border-collapse: collapse;
 }
@@ -16,7 +20,7 @@ td {
   border: 1px solid black;
 }
 
-div.diagram {
+#diagram {
 }
 
 div.label {
