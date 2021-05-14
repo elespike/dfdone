@@ -112,29 +112,29 @@ def main(args=None, return_html=False):
     include_information = {
         'assumptions': partial(
             plot.build_assumption_table,
-            tml_parser.assumptions
+            tml_parser.assumptions,
         ),
         'data': partial(
             plot.build_data_table,
-            cg.yield_data(tml_parser.components)
+            list(cg.yield_data(tml_parser.components)),
         ),
         'threats': partial(
             plot.build_threat_table,
-            cg.yield_threats(tml_parser.components)
+            list(cg.yield_threats(tml_parser.components)),
         ),
         'measures': partial(
             plot.build_measure_table,
-            cg.yield_measures(tml_parser.components)
+            list(cg.yield_measures(tml_parser.components)),
         ),
         'diagram': partial(
             plot.build_diagram,
-            cg.yield_elements(tml_parser.components),
-            cg.yield_interactions(tml_parser.components),
+            list(cg.yield_elements(tml_parser.components)),
+            list(cg.yield_interactions(tml_parser.components)),
             omit_numbers=args.no_numbers,
         ),
         'interactions': partial(
             plot.build_interaction_table,
-            cg.yield_interactions(tml_parser.components)
+            list(cg.yield_interactions(tml_parser.components)),
         ),
     }
 

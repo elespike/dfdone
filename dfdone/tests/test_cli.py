@@ -27,6 +27,8 @@ class TestCLI(unittest.TestCase):
             perm for i in range(1, 4)
             for perm in itertools.permutations(arg_options, i)
         ]
+        for o in arg_options:
+            arg_combinations.append((o, o))
         return arg_combinations
 
     def test_defaults(self):
