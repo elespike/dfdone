@@ -1,7 +1,7 @@
 from functools import partial
 from io import StringIO
 from pathlib import Path
-from sys import exit, stdout
+from sys import stdout
 
 import argparse
 
@@ -17,6 +17,17 @@ def build_arg_parser(testing=False):
     model_file_kwargs = {
         'type': argparse.FileType('r') if not testing else StringIO,
         'metavar': 'MODEL_FILE',
+    }
+
+    c_kwargs = {
+        'action': 'store_true',
+        'help': (
+            'Outputs the contents of the specified model file,\n'
+            'highlighting every statement that the parser did not understand.\n'
+            'If other model files are referenced with the Include directive,\n'
+            'the highlighted contents of those files will be output as well.\n'
+            F"{EXAMPLE} \"dfdone -c examples/gotchas.tml\""
+        ),
     }
 
     i_defaults = [
@@ -95,6 +106,7 @@ def build_arg_parser(testing=False):
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument('model_file', **model_file_kwargs)
+    parser.add_argument('-c', '--check', **c_kwargs)
     parser.add_argument('-i', '--include', **i_kwargs)
     parser.add_argument('-x', '--exclude', **x_kwargs)
     parser.add_argument('--no-numbers', **no_numbers_kwargs)
@@ -107,7 +119,10 @@ def build_arg_parser(testing=False):
 def main(args=None, return_html=False):
     if args is None:
         args = build_arg_parser().parse_args()
-    tml_parser = Parser(args.model_file)
+    tml_parser = Parser(args.model_file, args.check)
+
+    if args.check:
+        return
 
     include_information = {
         'assumptions': partial(
@@ -141,7 +156,7 @@ def main(args=None, return_html=False):
     if args.diagram is not None:
         diagram = include_information['diagram'](fmt=args.diagram)
         stdout.buffer.write(diagram)
-        exit(0)
+        return
 
     html = ''
     for info in filter(

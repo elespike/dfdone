@@ -5,6 +5,7 @@ from pathlib import Path
 from pyparsing import ParseResults
 
 from dfdone.components import (
+    Component,
     Datum,
     Element,
     Measure,
@@ -30,41 +31,63 @@ from dfdone.tml.grammar import constructs
 
 
 class Parser:
-    def __init__(self, model_file):
+    def __init__(self, model_file, check_file=False):
+        self.model_file = model_file
+        self.check_file = check_file
+
         self.assumptions = list()
         self.components = dict()
         self.component_groups = dict()
 
-        if hasattr(model_file, 'name'):
+        self.exercise_directives(self.parse())
+
+    @property
+    def directory(self):
+        if hasattr(self.model_file, 'name'):
             # If model_file is STDIN, this will be the working directory.
-            self.directory = Path(model_file.name).resolve().parent
+            return Path(self.model_file.name).resolve().parent
         else:
             # This will happen when running tests,
             # which are set up to use StringIO to mock model_file.
             # Since there's no file name, fall back to working directory.
-            self.directory = Path().resolve()
-        self.exercise_directives(Parser.parse_file(model_file))
+            return Path().resolve()
 
-    @staticmethod
-    def parse_file(model_file):
+    def parse(self, other_file=None):
         """
         Parses a file (or data stream) according to DFDone's defined grammar
         and returns a list of pyparsing.ParseResults.
         >>> from io import StringIO  # to simulate a file
         >>> data = '"DB" is a white-box storage'
         >>> with StringIO(data) as model_file:
-        ...     Parser.parse_file(model_file)
+        ...     parser.parse(other_file=model_file)
         ...
         [(['DB', 'is a', 'white-box', 'storage'], {'label': ['DB'], 'profile': ['white'], 'role': ['storage']})]
         """
-        data = model_file.read()
-        results = [
-            result for c in constructs.values()
-            for result in c.searchString(data)
-        ]
+        target_file = other_file or self.model_file
+        data = target_file.read()
+        results, locs = list(), list()
+        for c in constructs.values():
+            for tokens, start, end in c.scanString(data):
+                locs.append((start, end))
+                results.append(tokens)
+
+        if self.check_file:
+            HL = '\N{ESC}[7m{}\N{ESC}[0m'
+            print()
+            print(F"------ BEGIN {target_file.name}")
+            prev = 0
+            for start, end in sorted(locs):
+                if data[prev:start]:
+                    print(HL.format(data[prev:start]), end='')
+                print(data[start:end], end='')
+                prev = end
+            if data[prev:]:
+                print(HL.format(data[prev:]), end='')
+            print()
+            print(F"------ END {target_file.name}")
         return results
 
-    def compile_components(self, component_list):
+    def compile_components(self, component_list, of_type=Component):
         """
         Given component_list, which is a list of chosen labels defined in
         the model file, returns a corresponding Component list.
@@ -79,6 +102,11 @@ class Parser:
         data 1 data 1
         data 2 data 1
         service 1 service 1
+        >>> from dfdone.components import Datum
+        >>> data = parser.compile_components(id_list, of_type=Datum)
+        >>> data.sort(key=lambda d: d.id)
+        >>> data
+        [data 1, data 2]
         """
         components = list()
         for c in component_list:
@@ -88,13 +116,15 @@ class Parser:
             components.extend(self.component_groups.get(label, []))
             if label in self.components:
                 components.append(self.components[label])
-        return components
+        if not all(isinstance(c, of_type) for c in components):
+            # TODO issue warning when logging is in place
+            pass
+        return [c for c in components if isinstance(c, of_type)]
 
     def exercise_directives(self, parsed_results):
-        # "parsed_results" is sorted according to
-        # the order of "dfdone.tml.grammar.constructs",
-        # which means that the order of "constructs"
-        # is what dictates the order of operations.
+        # "parsed_results" are sorted according to the order of
+        # "dfdone.tml.grammar.constructs", which means that the order of
+        # "constructs" is what dictates the order of operations.
         for r in parsed_results:
             components = self.compile_components([r.label])
             if r.path:
@@ -132,7 +162,7 @@ class Parser:
                 _components = copy(self.components)
                 with file_or_dir.open() as f:
                     self.exercise_directives(
-                        Parser.parse_file(f)
+                        self.parse(other_file=f)
                     )
                 # Select only the components added during recursion.
                 diff = [
@@ -157,7 +187,7 @@ class Parser:
         to self.components, or a Component group to self.component_groups.
         If a group contains different component types, it won't be added.
         See dfdone/tests/test_constructs.tml for component definitions.
-        >>> for result in Parser.parse_file(model_file):
+        >>> for result in parser.parse():
         ...     parser.build_component(result)
         ...
         >>> expected_keys = {
@@ -195,7 +225,7 @@ class Parser:
                 type(a) == type(b)
                 for a, b in combinations(group_members, 2)
             ):
-                group.extend(list(set(group_members)))
+                group.extend(set(group_members))
                 self.component_groups[parsed_result.label] = group
             else:
                 # TODO issue warning, when logging is in place
@@ -305,10 +335,7 @@ class Parser:
             component.probability = parsed_result.description
 
     def build_interaction(self, parsed_result):
-        for action in Action:
-            if parsed_result.action.upper() == action.name:
-                parsed_result.action = action
-                break
+        parsed_result.action = get_property(parsed_result.action, Action)
         data_threats = dict()
         for effect in parsed_result.effect_list:
             self.build_datum_threats(effect, data_threats)
@@ -326,7 +353,7 @@ class Parser:
     def build_datum_threats(self, effect, data_threats):
         for d in self.compile_components([effect.label]):
             data_threats[d] = list()
-            for t in self.compile_components(effect.threat_list):
+            for t in self.compile_components(effect.threat_list, of_type=Threat):
                 t.active = True
                 # Using deepcopy() because each mitigation application
                 # should modify its own instance of Threat as well as
@@ -368,7 +395,7 @@ class Parser:
         ...     '"measure 2" must be implemented on all data between all nodes',
         ... ]
         >>> mitigations = StringIO('\\n'.join(data))
-        >>> for result in Parser.parse_file(mitigations):
+        >>> for result in parser.parse(other_file=mitigations):
         ...     parser.apply_measures(result)
         ...
         >>> for interaction in yield_interactions(parser.components):

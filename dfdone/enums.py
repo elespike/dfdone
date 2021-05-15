@@ -18,6 +18,7 @@ class Role(Enum):
 @unique
 class Profile(Enum):
     BLACK = 'black'
+    GRAY = 'gray'
     GREY = 'grey'
     WHITE = 'white'
 

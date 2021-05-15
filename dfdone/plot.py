@@ -134,9 +134,9 @@ def build_measure_table(measures):
 
 def organize_elements(graph, elements):
     central_elements = max([
-        [e for e in elements if e.profile == Profile.BLACK],
-        [e for e in elements if e.profile == Profile.GREY],
-        [e for e in elements if e.profile == Profile.WHITE],
+        [e for e in elements if e.profile is Profile.BLACK],
+        [e for e in elements if e.profile is Profile.GRAY or e.profile is Profile.GREY],
+        [e for e in elements if e.profile is Profile.WHITE],
     ], key=lambda l: len(l))
 
     if not central_elements:
@@ -223,7 +223,8 @@ def add_node(graph, element):
     # Set proper background + text contrast
     fillcolor, fontcolor = {
         Profile.BLACK: ('black', 'white'),
-        Profile.GREY: ('dimgrey', 'white')
+        Profile.GRAY: ('dimgrey', 'white'),
+        Profile.GREY: ('dimgrey', 'white'),
     }.get(element.profile, ('white', 'black'))
 
     graph.node(

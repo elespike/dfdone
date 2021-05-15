@@ -1,0 +1,42 @@
+> Diagram Elements
+==================
+
+# These statements are equivalent:
+"User" is a gray-box agent  # grAy-box
+"User" is a grey-box agent  # grEy-box
+"User" is a gray box agent  # grAy box
+"User" is a grey box agent  # grEy box
+"User" iS a GrEy BoX aGeNt  # case doesn't matter
+
+
+> Diagram Interactions
+======================
+
+# Data must be separated with semicolons:
+"User" sends "un"; "pw"; to "Web App".
+                 ^     ^
+# The last semicolon may be omitted.
+"User" sends "un"; "pw"  to "Web App".
+                       ^
+# Commas will not work. Keep reading to see why.
+"User" sends "un", "pw" to "Web App".
+                 ^
+
+# Separating data with semicolons allows risks to be applied to individual data:
+"User" sends "un", risking "xss"; "pw", risking "cmdi"; to "Web App".
+             |_xss on "un" only_| |_cmdi on "pw" only_|
+
+# That is because multiple risks are themselves comma-separated,
+# whether applied to specific data, or to the entire interaction:
+"User" sends "un", risking "xss", "DoS"; "pw", risking "cmdi", "leak"; to "Web App", risking "CSRF", "SSRF".
+             |                  ^      | |                   ^       |    |                        ^       |
+             |_xss and DoS on "un" only| |_cmdi and leak on "pw" only|    |_CSRF and SSRF on all data sent_|
+
+# Another example - if you wanted to assign some risks to "un", and none to "pw",
+# using a comma here instead of a semicolon will tell DFDone that "pw" is another risk:
+"User" sends "un", risking "xss", "DoS", "pw" to "Web App"
+                                       ^
+# The semicolon becomes necessary to indicate that "User" is sending
+# both "un" and "pw", but with risks only to "un":
+"User" sends "un", risking "xss", "DoS"; "pw" to "Web App"
+                                       ^

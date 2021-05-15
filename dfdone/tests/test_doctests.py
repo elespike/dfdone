@@ -20,7 +20,6 @@ def load_tests(loader, tests, pattern):
         parser,
         extraglobs={
             'parser': parser.Parser(test_model_file),
-            'model_file': test_model_file,
         }
     ))
     # tests.addTests(doctest.DocTestSuite(
