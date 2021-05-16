@@ -1,13 +1,15 @@
+import logging
+
 from functools import partial
 from io import StringIO
 from pathlib import Path
-from sys import stdout
+from sys import stderr, stdout
 
 import argparse
 
 from dfdone import component_generators as cg
 from dfdone import plot
-from dfdone.tml.parser import Parser
+from dfdone.tml.parser import HL, Parser
 
 
 def build_arg_parser(testing=False):
@@ -66,6 +68,16 @@ def build_arg_parser(testing=False):
         ),
     }
 
+    v_kwargs = {
+        'action': 'count',
+        'default': 0 if not testing else -1,
+        'help': (
+            "Increases the verbosity of DFDone's log messages.\n"
+            F"{EXAMPLE} \"dfdone -v\" to also receive informational messages;\n"
+             "        \"dfdone -vv\" to also receive debug messages.\n"
+        ),
+    }
+
     no_numbers_kwargs = {
         'action': 'store_true',
         'help': 'Omits the numbers next to each arrow in the diagram.',
@@ -109,6 +121,7 @@ def build_arg_parser(testing=False):
     parser.add_argument('-c', '--check', **c_kwargs)
     parser.add_argument('-i', '--include', **i_kwargs)
     parser.add_argument('-x', '--exclude', **x_kwargs)
+    parser.add_argument('-v', **v_kwargs)
     parser.add_argument('--no-numbers', **no_numbers_kwargs)
     parser.add_argument('--css', **css_kwargs)
     parser.add_argument('--no-css', **no_css_kwargs)
@@ -116,9 +129,24 @@ def build_arg_parser(testing=False):
     return parser
 
 
+def prepare_logger(verbosity):
+    logger = logging.getLogger('dfdone.cli')
+    handler = logging.StreamHandler(stream=stderr)
+    handler.setFormatter(logging.Formatter(
+        style='{',
+        fmt=F"{HL.format('{levelname}')} {{message}}"
+    ))
+    logger.addHandler(handler)
+
+    if verbosity > 2:
+        verbosity = 2
+    logger.setLevel(logging.WARNING - verbosity * 10)
+    return logger
+
 def main(args=None, return_html=False):
     if args is None:
         args = build_arg_parser().parse_args()
+    logger = prepare_logger(args.v)
     tml_parser = Parser(args.model_file, args.check)
 
     if args.check:

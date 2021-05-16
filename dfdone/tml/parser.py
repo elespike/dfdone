@@ -1,5 +1,6 @@
 from copy import copy, deepcopy
 from itertools import combinations, starmap
+from logging import getLogger
 from pathlib import Path
 
 from pyparsing import ParseResults
@@ -30,10 +31,16 @@ from dfdone.enums import (
 from dfdone.tml.grammar import constructs
 
 
+HL = '\N{ESC}[7m{}\N{ESC}[0m'
+
 class Parser:
-    def __init__(self, model_file, check_file=False):
+    def __init__(self, model_file, check_file=False, log_level=None):
         self.model_file = model_file
         self.check_file = check_file
+
+        self.logger = getLogger('dfdone.cli.parser')
+        if log_level is not None:
+            self.logger.setLevel(log_level)
 
         self.assumptions = list()
         self.components = dict()
@@ -72,7 +79,6 @@ class Parser:
                 results.append(tokens)
 
         if self.check_file:
-            HL = '\N{ESC}[7m{}\N{ESC}[0m'
             print()
             print(F"------ BEGIN {target_file.name}")
             prev = 0
@@ -117,8 +123,13 @@ class Parser:
             if label in self.components:
                 components.append(self.components[label])
         if not all(isinstance(c, of_type) for c in components):
-            # TODO issue warning when logging is in place
-            pass
+            self.logger.warning(
+                'Please verify the statement where these components are referenced together:\n'
+                F"\t{', '.join('{} ({})'.format(repr(c), type(c).__name__) for c in components)}\n"
+                '\tWhile DFDone successfully parsed the statement, '
+                'their type mismatch could indicate a mistake.\n'
+                '\tRefer to the examples directory for additional guidance.'
+            )
         return [c for c in components if isinstance(c, of_type)]
 
     def exercise_directives(self, parsed_results):
@@ -173,9 +184,12 @@ class Parser:
                     self.component_groups[group_label].extend(diff)
                 elif group_label:
                     self.component_groups[group_label] = diff
-                return  # to stop the loop.
-        # TODO log a warning saying the file to be included could not
-        # be found in the current FS branch.
+                break
+        else:
+            self.logger.warning(
+                F"Unable to find {fpath} under {self.directory} "
+                'or any of its parent directories!'
+            )
 
     def process_exceptions(self, exceptions, group_label):
         for c in self.compile_components(exceptions):
@@ -228,8 +242,11 @@ class Parser:
                 group.extend(set(group_members))
                 self.component_groups[parsed_result.label] = group
             else:
-                # TODO issue warning, when logging is in place
-                pass
+                self.logger.warning(
+                    F"The following components will not be grouped as \"{parsed_result.label}\":\n"
+                    F"\t{', '.join('{} ({})'.format(repr(c), type(c).__name__) for c in group_members)}\n"
+                    '\tAll components you wish to group must be of the same type.'
+                )
 
     def build_element(self, parsed_result):
         profile = get_property(parsed_result.profile, Profile)

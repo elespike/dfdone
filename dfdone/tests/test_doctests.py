@@ -16,10 +16,11 @@ def load_tests(loader, tests, pattern):
         extraglobs={'components': example_parser.components}
     ))
     test_model_file = StringIO(TEST_TML_DATA)
+    test_parser = parser.Parser(test_model_file, log_level=40)  # logging.ERROR
     tests.addTests(doctest.DocTestSuite(
         parser,
         extraglobs={
-            'parser': parser.Parser(test_model_file),
+            'parser': test_parser,
         }
     ))
     # tests.addTests(doctest.DocTestSuite(
