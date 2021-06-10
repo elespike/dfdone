@@ -83,8 +83,8 @@ def build_arg_parser(testing=False):
         'help': 'Omits the numbers next to each arrow in the diagram.',
     }
 
-    default_css_path = Path(
-        F"{Path(__file__).resolve().parent}/../static/default.css"
+    default_css_path = Path(__file__).parent.joinpath(
+        '../../examples/default.css'
     ).resolve()
     css_kwargs = {
         'type': argparse.FileType('r'),
