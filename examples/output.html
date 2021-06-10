@@ -5,6 +5,7 @@
 
 table {
   border-collapse: collapse;
+  margin: 1em;
 }
 table.assumption-table {
 }
@@ -17,14 +18,29 @@ table.measure-table {
 table.interaction-table {
 }
 
-td {
+th, td {
   border: 1px solid black;
+  padding: 2px 12px;
+}
+th {
+  background-color: LightGrey;
+}
+td > a {
+  color: inherit;
+  text-decoration: none;
+}
+td > a:hover {
+  text-decoration: underline;
 }
 
 #diagram {
 }
 
 div.label {
+  background-color: WhiteSmoke;
+  border-radius: 4px;
+  margin: 4px 0px;
+  padding: 4px;
 }
 div.assumption-label {
 }
@@ -204,9 +220,9 @@ div.dash {
 <div id="command-injection" class="label threat-label risk-high">Command Injection</div>
 </td>
 <td>
-<div class="label measure-label capability-full"><a href="#input-validation">Input Validation</a></div>
-<div class="label measure-label capability-partial"><a href="#blocking-waf">Blocking WAF</a></div>
-<div class="label measure-label capability-detective"><a href="#learning-waf">Learning WAF</a></div>
+<a href="#input-validation"><div class="label measure-label capability-full">Input Validation</div></a>
+<a href="#blocking-waf"><div class="label measure-label capability-partial">Blocking WAF</div></a>
+<a href="#learning-waf"><div class="label measure-label capability-detective">Learning WAF</div></a>
 </td>
 <td>
 <div class="dash">-</div>
@@ -220,9 +236,9 @@ div.dash {
 <div id="cross-site-scripting" class="label threat-label risk-high">Cross-Site Scripting</div>
 </td>
 <td>
-<div class="label measure-label capability-full"><a href="#input-validation">Input Validation</a></div>
-<div class="label measure-label capability-partial"><a href="#blocking-waf">Blocking WAF</a></div>
-<div class="label measure-label capability-detective"><a href="#learning-waf">Learning WAF</a></div>
+<a href="#input-validation"><div class="label measure-label capability-full">Input Validation</div></a>
+<a href="#blocking-waf"><div class="label measure-label capability-partial">Blocking WAF</div></a>
+<a href="#learning-waf"><div class="label measure-label capability-detective">Learning WAF</div></a>
 </td>
 <td>
 <div class="dash">-</div>
@@ -236,10 +252,10 @@ div.dash {
 <div id="database-injection" class="label threat-label risk-high">Database Injection</div>
 </td>
 <td>
-<div class="label measure-label capability-full"><a href="#input-validation">Input Validation</a></div>
-<div class="label measure-label capability-full"><a href="#parameterized-queries">Parameterized Queries</a></div>
-<div class="label measure-label capability-partial"><a href="#blocking-waf">Blocking WAF</a></div>
-<div class="label measure-label capability-detective"><a href="#learning-waf">Learning WAF</a></div>
+<a href="#input-validation"><div class="label measure-label capability-full">Input Validation</div></a>
+<a href="#parameterized-queries"><div class="label measure-label capability-full">Parameterized Queries</div></a>
+<a href="#blocking-waf"><div class="label measure-label capability-partial">Blocking WAF</div></a>
+<a href="#learning-waf"><div class="label measure-label capability-detective">Learning WAF</div></a>
 </td>
 <td>
 <div class="dash">-</div>
@@ -277,9 +293,9 @@ div.dash {
 <div id="input-validation" class="label measure-label capability-full">Input Validation</div>
 </td>
 <td>
-<div class="label threat-label risk-high"><a href="#command-injection">Command Injection</a></div>
-<div class="label threat-label risk-high"><a href="#cross-site-scripting">Cross-Site Scripting</a></div>
-<div class="label threat-label risk-high"><a href="#database-injection">Database Injection</a></div>
+<a href="#command-injection"><div class="label threat-label risk-high">Command Injection</div></a>
+<a href="#cross-site-scripting"><div class="label threat-label risk-high">Cross-Site Scripting</div></a>
+<a href="#database-injection"><div class="label threat-label risk-high">Database Injection</div></a>
 </td>
 <td>
 <div class="description measure-description"><a href="https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html">Click for more info</a></div>
@@ -293,7 +309,7 @@ div.dash {
 <div id="parameterized-queries" class="label measure-label capability-full">Parameterized Queries</div>
 </td>
 <td>
-<div class="label threat-label risk-high"><a href="#database-injection">Database Injection</a></div>
+<a href="#database-injection"><div class="label threat-label risk-high">Database Injection</div></a>
 </td>
 <td>
 <div class="dash">-</div>
@@ -307,9 +323,9 @@ div.dash {
 <div id="blocking-waf" class="label measure-label capability-partial">Blocking WAF</div>
 </td>
 <td>
-<div class="label threat-label risk-high"><a href="#command-injection">Command Injection</a></div>
-<div class="label threat-label risk-high"><a href="#cross-site-scripting">Cross-Site Scripting</a></div>
-<div class="label threat-label risk-high"><a href="#database-injection">Database Injection</a></div>
+<a href="#command-injection"><div class="label threat-label risk-high">Command Injection</div></a>
+<a href="#cross-site-scripting"><div class="label threat-label risk-high">Cross-Site Scripting</div></a>
+<a href="#database-injection"><div class="label threat-label risk-high">Database Injection</div></a>
 </td>
 <td>
 <div class="description measure-description">WAF in blocking mode</div>
@@ -323,9 +339,9 @@ div.dash {
 <div id="learning-waf" class="label measure-label capability-detective">Learning WAF</div>
 </td>
 <td>
-<div class="label threat-label risk-high"><a href="#command-injection">Command Injection</a></div>
-<div class="label threat-label risk-high"><a href="#cross-site-scripting">Cross-Site Scripting</a></div>
-<div class="label threat-label risk-high"><a href="#database-injection">Database Injection</a></div>
+<a href="#command-injection"><div class="label threat-label risk-high">Command Injection</div></a>
+<a href="#cross-site-scripting"><div class="label threat-label risk-high">Cross-Site Scripting</div></a>
+<a href="#database-injection"><div class="label threat-label risk-high">Database Injection</div></a>
 </td>
 <td>
 <div class="description measure-description">WAF in learning mode</div>
@@ -435,12 +451,12 @@ div.dash {
 </thead>
 <tbody>
 <tr>
-<td rowspan="2"><div id="interaction-1" class="row-number interaction-number"><a href=#diagram>1</a></div></td>
-<td><div class="label data-label classification-confidential"><a href="#pw">pw</a></div></td>
+<td rowspan="2"><a href=#diagram><div id="interaction-1" class="row-number interaction-number">1</div></a></td>
+<td><a href="#pw"><div class="label data-label classification-confidential">pw</div></a></td>
 <td rowspan=1>
-<div class="label threat-label risk-high"><a href="#command-injection">Command Injection</a></div>
-<div class="label mitigation-label imperative-must capability-full status-pending"><a href="#input-validation">Input Validation</a></div>
-<div class="label mitigation-label imperative-may capability-detective status-pending"><a href="#learning-waf">Learning WAF</a></div>
+<a href="#command-injection"><div class="label threat-label risk-high">Command Injection</div></a>
+<a href="#input-validation"><div class="label mitigation-label imperative-must capability-full status-pending">Input Validation</div></a>
+<a href="#learning-waf"><div class="label mitigation-label imperative-may capability-detective status-pending">Learning WAF</div></a>
 </td>
 <td rowspan="2"><div class="dash">-</div></td>
 <td rowspan="2">
@@ -448,35 +464,35 @@ div.dash {
 </td>
 </tr>
 <tr>
-<td><div class="label data-label classification-public"><a href="#un">un</a></div></td>
+<td><a href="#un"><div class="label data-label classification-public">un</div></a></td>
 <td rowspan=1>
-<div class="label threat-label risk-high"><a href="#cross-site-scripting">Cross-Site Scripting</a></div>
-<div class="label mitigation-label imperative-must capability-full status-pending"><a href="#input-validation">Input Validation</a></div>
-<div class="label mitigation-label imperative-should capability-partial status-implemented"><a href="#blocking-waf">Blocking WAF</a></div>
+<a href="#cross-site-scripting"><div class="label threat-label risk-high">Cross-Site Scripting</div></a>
+<a href="#input-validation"><div class="label mitigation-label imperative-must capability-full status-pending">Input Validation</div></a>
+<a href="#blocking-waf"><div class="label mitigation-label imperative-should capability-partial status-implemented">Blocking WAF</div></a>
 </td>
 </tr>
 <tr>
-<td rowspan="2"><div id="interaction-2" class="row-number interaction-number"><a href=#diagram>2</a></div></td>
-<td><div class="label data-label classification-confidential"><a href="#pw">pw</a></div></td>
+<td rowspan="2"><a href=#diagram><div id="interaction-2" class="row-number interaction-number">2</div></a></td>
+<td><a href="#pw"><div class="label data-label classification-confidential">pw</div></a></td>
 <td><div class="dash">-</div></td>
 <td rowspan=2>
-<div class="label threat-label risk-high"><a href="#database-injection">Database Injection</a></div>
-<div class="label mitigation-label imperative-must capability-full status-pending"><a href="#parameterized-queries">Parameterized Queries</a></div>
+<a href="#database-injection"><div class="label threat-label risk-high">Database Injection</div></a>
+<a href="#parameterized-queries"><div class="label mitigation-label imperative-must capability-full status-pending">Parameterized Queries</div></a>
 </td>
 <td rowspan="2">
 <div class="dash">-</div>
 </td>
 </tr>
 <tr>
-<td><div class="label data-label classification-public"><a href="#un">un</a></div></td>
+<td><a href="#un"><div class="label data-label classification-public">un</div></a></td>
 <td><div class="dash">-</div></td>
 </tr>
 <tr>
-<td rowspan="1"><div id="interaction-3" class="row-number interaction-number"><a href=#diagram>3</a></div></td>
-<td><div class="label data-label classification-restricted"><a href="#session-cookie">session cookie</a></div></td>
+<td rowspan="1"><a href=#diagram><div id="interaction-3" class="row-number interaction-number">3</div></a></td>
+<td><a href="#session-cookie"><div class="label data-label classification-restricted">session cookie</div></a></td>
 <td><div class="dash">-</div></td>
 <td rowspan=1>
-<div class="label threat-label risk-medium"><a href="#information-disclosure">Information Disclosure</a></div>
+<a href="#information-disclosure"><div class="label threat-label risk-medium">Information Disclosure</div></a>
 </td>
 <td rowspan="1">
 <div class="dash">-</div>

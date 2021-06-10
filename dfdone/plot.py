@@ -63,9 +63,10 @@ def build_table_rows(class_prefix, component_list):
             table_rows.append('<td>')
             for m in c.measures:
                 table_rows.append((
-                    '<div class="label measure-label '
+                    F'<a href="#{id_format(m.id)}">'
+                    F'<div class="label measure-label '
                     F'capability-{m.capability.name.lower()}">'
-                    F'<a href="#{id_format(m.id)}">{m.label}</a></div>'
+                    F'{m.label}</div></a>'
                 ))
             table_rows.append('</td>')
 
@@ -73,9 +74,10 @@ def build_table_rows(class_prefix, component_list):
             table_rows.append('<td>')
             for t in c.threats:
                 table_rows.append((
-                    '<div class="label threat-label '
+                    F'<a href="#{id_format(t.id)}">'
+                    F'<div class="label threat-label '
                     F'risk-{t.calculate_risk().name.lower()}">'
-                    F'<a href="#{id_format(t.id)}">{t.label}</a></div>'
+                    F'{t.label}</div></a>'
                 ))
             table_rows.append('</td>')
 
@@ -244,18 +246,19 @@ def build_threats_cell(threats, classification, interaction_table, rowspan=1):
     for t in threats:
         risk_level = t.calculate_risk(classification).name.lower()
         interaction_table.append((
-            F'<div class="label threat-label risk-{risk_level}">'
-            F'<a href="#{id_format(t.id)}">{t.label}</a></div>'
+            F'<a href="#{id_format(t.id)}">'
+            F'<div class="label threat-label risk-{risk_level}">{t.label}</div></a>'
         ))
         for m in t.measures:
             if not m.active:
                 continue
             interaction_table.append((
-                '<div class="label mitigation-label '
+                F'<a href="#{id_format(m.id)}">'
+                F'<div class="label mitigation-label '
                 F"imperative-{m.imperative.name.lower()} "
                 F"capability-{m.capability.name.lower()} "
                 F'status-{m.status.name.lower()}">'
-                F'<a href="#{id_format(m.id)}">{m.label}</a></div>'
+                F'{m.label}</div></a>'
             ))
     interaction_table.append('</td>')
 
@@ -269,8 +272,9 @@ def build_interaction_table(interactions):
         interaction_table.append('<tr>')
         interaction_table.append((
             F'<td rowspan="{interaction_rowspan}">'
-            F'<div id="interaction-{i_index + 1}" class="row-number interaction-number">'
-            F"<a href=#diagram>{i_index + 1}</a></div></td>"
+            F'<a href=#diagram><div id="interaction-{i_index + 1}" '
+            F'class="row-number interaction-number">'
+            F"{i_index + 1}</div></a></td>"
         ))
 
         di = 0
@@ -278,10 +282,9 @@ def build_interaction_table(interactions):
             if di > 0:
                 interaction_table.append('<tr>')
             interaction_table.append((
-                F'<td><div class="label data-label '
+                F'<td><a href="#{id_format(datum.id)}"><div class="label data-label '
                 F'classification-{datum.classification.name.lower()}">'
-                F'<a href="#{id_format(datum.id)}">{datum.label}</a>'
-                '</div></td>'
+                F'{datum.label}</div></a></td>'
             ))
 
             if not threats:
