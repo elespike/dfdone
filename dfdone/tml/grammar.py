@@ -57,7 +57,6 @@ INCLUDE   = CaselessKeyword('include'  )
 ON        = CaselessKeyword('on'       )
 THREAT    = CaselessKeyword('threat'   )
 
-GROUP         = QuotedString('"', escQuote='""').setResultsName('group'        )
 LABEL         = QuotedString('"', escQuote='""').setResultsName('label'        )
 NEW_NAME      = QuotedString('"', escQuote='""').setResultsName('new_name'     )
 OBJECT        = QuotedString('"', escQuote='""').setResultsName('object'       )
@@ -73,6 +72,7 @@ DATA_LIST          = delimitedList(Group(LABEL) , ',').setResultsName('data_list
 ELEMENT_EXCEPTIONS = delimitedList(Group(LABEL) , ',').setResultsName('element_exceptions')
 ELEMENT_LIST       = delimitedList(Group(LABEL) , ',').setResultsName('element_list'      )
 EXCEPTIONS         = delimitedList(Group(LABEL) , ',').setResultsName('exceptions'        )
+GROUPS             = delimitedList(Group(LABEL) , ',').setResultsName('groups'            )
 LABEL_LIST         = delimitedList(Group(LABEL) , ',').setResultsName('label_list'        )
 
 THREAT_LIST = delimitedList(Group(LABEL) , ',').setResultsName('threat_list')
@@ -92,8 +92,6 @@ def all_combinations(expression_list):
 
 # The ordering of the 'constructs' list matters!
 # Construct definitions (e.g., LABEL + IS_A) should come after INCLUDE.
-# Furthermore, the order of this list must match
-# the order of dfdone.parser.grammar_tests.all_tests.
 constructs = [
     # Parse additional files
     INCLUDE + PATH
@@ -102,7 +100,7 @@ constructs = [
     ),
     # Element
     LABEL + IS_A + PROFILE + ROLE
-    + Optional(IN + GROUP)
+    + Optional(IN + GROUPS)
     + Optional(DESCRIBED + AS + DESCRIPTION),
     # Datum
     LABEL + IS_A + CLASSIFICATION + DATUM
@@ -120,7 +118,7 @@ constructs = [
         LABELED + NEW_NAME,
         DESCRIBED + AS + DESCRIPTION,
         MatchFirst([
-            Or(all_combinations([PROFILE, ROLE, IN + GROUP])),
+            Or(all_combinations([PROFILE, ROLE, IN + GROUPS])),
             CLASSIFICATION + DATUM,
             Or(all_combinations([IMPACT, PROBABILITY])) + THREAT,
             Or([

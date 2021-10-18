@@ -1,4 +1,4 @@
-from collections import defaultdict as ddict
+from collections import namedtuple
 from operator import attrgetter, methodcaller
 from string import punctuation
 
@@ -137,7 +137,7 @@ def build_measure_table(measures):
 def organize_elements(graph, elements):
     central_elements = max([
         [e for e in elements if e.profile is Profile.BLACK],
-        [e for e in elements if e.profile is Profile.GRAY or e.profile is Profile.GREY],
+        [e for e in elements if e.profile in [Profile.GRAY, Profile.GREY]],
         [e for e in elements if e.profile is Profile.WHITE],
     ], key=lambda l: len(l))
 
@@ -160,26 +160,50 @@ def organize_elements(graph, elements):
         graph.subgraph(rank_subgraph)
 
 
+ElementGroup = namedtuple('ElementGroup', 'label, elements')
+def find_group(label, group_list):
+    for item in group_list:
+        if isinstance(item, ElementGroup) and item.label == label:
+            return item
+
+
+def group_elements(elements):
+    grouped_elements = list()
+    for e in elements:
+        if not e.groups:
+            grouped_elements.append(e)
+            continue
+        active_list = grouped_elements
+        for i, g in enumerate(e.groups):
+            element_group = find_group(g, active_list)
+            if element_group is None:
+                element_group = ElementGroup(g.label, list())
+                active_list.append(element_group)
+            active_list = element_group.elements
+            if i == len(e.groups) - 1:
+                active_list.append(e)
+    return grouped_elements
+
+
+def build_subgraph(parent_graph, items):
+    for item in items:
+        if isinstance(item, ElementGroup):
+            # Graphviz requirement: name must start with 'cluster'.
+            sub = Digraph(name=F"cluster_{item.label}")
+            sub.attr(label=item.label, tooltip=item.label, style='dashed', color='grey')
+            build_subgraph(sub, item.elements)
+            parent_graph.subgraph(sub)
+        else:  # it's an Element
+            add_node(parent_graph, item)
+
+
 def build_diagram(elements, interactions, fmt=None, omit_numbers=False):
     elements = list(elements)  # to be able to iterate more than once.
     dot = Digraph()
     dot.attr(rankdir='TB', newrank='false')
+
     organize_elements(dot, elements)
-
-    groups = ddict(list)
-    for e in elements:
-        if e.group:
-            groups[e.group].append(e)
-        else:
-            add_node(dot, e)
-
-    for group, group_elements in groups.items():
-        # Graphviz requirement: name must start with 'cluster'.
-        sub = Digraph(name=F"cluster_{group}")
-        sub.attr(label=group, tooltip=group, style='filled', color='lightgrey')
-        for e in group_elements:
-            add_node(sub, e)
-        dot.subgraph(sub)
+    build_subgraph(dot, group_elements(elements))
 
     _interactions = sorted(interactions, key=attrgetter('created'))
     attributes = dict()

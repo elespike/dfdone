@@ -243,9 +243,9 @@ class Parser:
                 self.component_groups[parsed_result.label] = group
             else:
                 self.logger.warning(
-                    F"The following components will not be grouped as \"{parsed_result.label}\":\n"
+                    F"The following components will not be aliased as \"{parsed_result.label}\":\n"
                     F"\t{', '.join('{} ({})'.format(repr(c), type(c).__name__) for c in group_members)}\n"
-                    '\tAll components you wish to group must be of the same type.'
+                    '\tAll components you wish to include in an alias must be of the same type.'
                 )
 
     def build_element(self, parsed_result):
@@ -255,7 +255,7 @@ class Parser:
             parsed_result.label,
             profile,
             role,
-            parsed_result.group,
+            parsed_result.groups,
             parsed_result.description
         )
 

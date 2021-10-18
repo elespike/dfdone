@@ -64,11 +64,11 @@ class Interaction:
 
 
 class Element(Component):
-    def __init__(self, label, profile, role, group, description):
+    def __init__(self, label, profile, role, groups, description):
         super().__init__(label, description)
         self.role = role
         self.profile = profile
-        self.group = group
+        self.groups = groups
         self.interactions = list()
 
     @staticmethod
