@@ -72,7 +72,7 @@ DATA_LIST          = delimitedList(Group(LABEL) , ',').setResultsName('data_list
 ELEMENT_EXCEPTIONS = delimitedList(Group(LABEL) , ',').setResultsName('element_exceptions')
 ELEMENT_LIST       = delimitedList(Group(LABEL) , ',').setResultsName('element_list'      )
 EXCEPTIONS         = delimitedList(Group(LABEL) , ',').setResultsName('exceptions'        )
-GROUPS             = delimitedList(Group(LABEL) , ',').setResultsName('groups'            )
+CLUSTERS           = delimitedList(Group(LABEL) , ',').setResultsName('clusters'          )
 LABEL_LIST         = delimitedList(Group(LABEL) , ',').setResultsName('label_list'        )
 
 THREAT_LIST = delimitedList(Group(LABEL) , ',').setResultsName('threat_list')
@@ -100,7 +100,7 @@ constructs = [
     ),
     # Element
     LABEL + IS_A + PROFILE + ROLE
-    + Optional(IN + GROUPS)
+    + Optional(IN + CLUSTERS)
     + Optional(DESCRIBED + AS + DESCRIPTION),
     # Datum
     LABEL + IS_A + CLASSIFICATION + DATUM
@@ -118,7 +118,7 @@ constructs = [
         LABELED + NEW_NAME,
         DESCRIBED + AS + DESCRIPTION,
         MatchFirst([
-            Or(all_combinations([PROFILE, ROLE, IN + GROUPS])),
+            Or(all_combinations([PROFILE, ROLE, IN + CLUSTERS])),
             CLASSIFICATION + DATUM,
             Or(all_combinations([IMPACT, PROBABILITY])) + THREAT,
             Or([

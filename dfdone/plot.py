@@ -170,17 +170,17 @@ def find_group(label, group_list):
 def group_elements(elements):
     grouped_elements = list()
     for e in elements:
-        if not e.groups:
+        if not e.clusters:
             grouped_elements.append(e)
             continue
         active_list = grouped_elements
-        for i, g in enumerate(e.groups):
+        for i, g in enumerate(e.clusters):
             element_group = find_group(g, active_list)
             if element_group is None:
                 element_group = ElementGroup(g.label, list())
                 active_list.append(element_group)
             active_list = element_group.elements
-            if i == len(e.groups) - 1:
+            if i == len(e.clusters) - 1:
                 active_list.append(e)
     return grouped_elements
 
