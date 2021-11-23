@@ -7,6 +7,14 @@ from dfdone.components import (
 )
 
 
+def _yield_components(components, of_type):
+    for component in filter(
+        lambda v: isinstance(v, of_type) and v.active,
+        components.values()
+    ):
+        yield component
+
+
 def yield_elements(components):
     """
     Yields each dfdone.components.Element found in the supplied iterator.
@@ -19,10 +27,7 @@ def yield_elements(components):
     Web App
     DB
     """
-    for element in filter(
-        lambda v: isinstance(v, Element),
-        components.values()
-    ):
+    for element in _yield_components(components, Element):
         yield element
 
 
@@ -38,10 +43,7 @@ def yield_data(components):
     pw
     session cookie
     """
-    for datum in filter(
-        lambda v: isinstance(v, Datum),
-        components.values()
-    ):
+    for datum in _yield_components(components, Datum):
         yield datum
 
 
@@ -59,10 +61,7 @@ def yield_threats(components):
     Command Injection
     Information Disclosure
     """
-    for threat in filter(
-        lambda v: isinstance(v, Threat) and v.active,
-        components.values()
-    ):
+    for threat in _yield_components(components, Threat):
         yield threat
 
 
@@ -78,11 +77,9 @@ def yield_measures(components):
     Parameterized Queries
     Blocking WAF
     Learning WAF
+    Error Handling
     """
-    for measure in filter(
-        lambda v: isinstance(v, Measure),
-        components.values()
-    ):
+    for measure in _yield_components(components, Measure):
         yield measure
 
 
@@ -98,6 +95,6 @@ def yield_interactions(components):
     Web App -> DB
     Web App -> User
     """
-    for e in yield_elements(components):
-        for i in e.interactions:
-            yield i
+    for interaction in _yield_components(components, Interaction):
+        yield interaction
+

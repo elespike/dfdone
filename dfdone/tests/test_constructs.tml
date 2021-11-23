@@ -22,3 +22,6 @@
 "invalid group" is "service 1", "threat 1"
 
 "agent 1" sends "data group" to "element group", risking "threat group"
+# Due to "element group", the above produces two interactions:
+#   agent 1 > service 1
+#   agent 1 > storage 1

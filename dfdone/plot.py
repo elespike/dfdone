@@ -1,31 +1,47 @@
-from collections import namedtuple
+# TODO move functions
+from itertools import combinations, groupby
+from logging import getLogger
 from operator import attrgetter, methodcaller
+from random import Random, randint
 from string import punctuation
+from textwrap import wrap
 
 from graphviz import Digraph
 
+from dfdone.component_generators import (
+    yield_data,
+    yield_elements,
+    yield_interactions,
+    yield_threats,
+    yield_measures,
+)
 from dfdone.enums import (
+    Action,
     Profile,
     Role,
 )
 
 
-ASSUMPTION = 'assumption'
 DATA = 'data'
-MEASURE = 'measure'
 THREAT = 'threat'
+MEASURE = 'measure'
+
+logger = getLogger(__name__)
 
 
 def table_from_list(class_name, table_headers, table_rows):
+    if not table_rows:
+        return ''
     final_list = ['<thead>']
     for header in table_headers:
         final_list.append(F"<th>{header}</th>")
     final_list.append('</thead>')
-    final_list.append('<tbody>')
+    # TODO unsure whether to wrap in tbody
+    # final_list.append('<tbody>')
     final_list.extend(table_rows)
-    final_list.append('</tbody>')
-    table_body = '\n'.join(final_list)
-    return F'\n\n<table class="{class_name}">\n{table_body}\n</table>'
+    # final_list.append('</tbody>')
+    table_body = ''.join(final_list)
+    return F'<table class="{class_name}">{table_body}</table>'
 
 
 slugify = str.maketrans(' ', '-', punctuation)
@@ -36,53 +52,58 @@ def id_format(label):
 def build_table_rows(class_prefix, component_list):
     table_rows = list()
     for i, c in enumerate(component_list):
-        table_rows.append('<tr>')
+        table_rows.append(F'<tr id="{id_format(c.id)}">')
         table_rows.append('<td>')
         table_rows.append(
-            F'<div class="row-number {class_prefix}-number">{i + 1}</div>'
+            F'<span class="row-number {class_prefix}-number">{i + 1}</span>'
         )
         table_rows.append('</td>')
 
-        style_class = ''
         if class_prefix == DATA:
-            style_class = F"classification-{c.classification.name.lower()}"
-        elif class_prefix == ASSUMPTION or class_prefix == THREAT:
-            style_class = F"risk-{c.calculate_risk().name.lower()}"
+            status_class = F"classification-{c.classification.name.lower()}"
+        elif class_prefix == THREAT:
+            status_class = F"risk-{c.calculate_risk().name.lower()}"
         elif class_prefix == MEASURE:
-            style_class = F"capability-{c.capability.name.lower()}"
+            status_class = F"capability-{c.capability.name.lower()}"
+        else:
+            raise ValueError(
+                F"class_prefix must be one of [{DATA}, {THREAT}, {MEASURE}]"
+            )
 
         table_rows.append('<td>')
         table_rows.append((
-            F'<div id="{id_format(c.id)}" '
-            F'class="label {class_prefix}-label {style_class}">'
-            F"{c.label}</div>"
+            F'<div><span class="status {class_prefix}-status {status_class}">'
+            F'&nbsp;</span><span class="label {class_prefix}-label">'
+            F'{c.label}</span></div>'
         ))
         table_rows.append('</td>')
 
         if class_prefix == THREAT:
             table_rows.append('<td>')
-            for m in c.measures:
+            for m in (m for m in c.measures if m.active):
                 table_rows.append((
-                    F'<a href="#{id_format(m.id)}">'
-                    F'<div class="label measure-label '
+                    F'<a href="#{id_format(m.id)}"><div>'
+                    F'<span class="status measure-status '
                     F'capability-{m.capability.name.lower()}">'
-                    F'{m.label}</div></a>'
+                    F'&nbsp;</span><span class="label measure-label">'
+                    F'{m.label}</span></div></a>'
                 ))
             table_rows.append('</td>')
 
         if class_prefix == MEASURE:
             table_rows.append('<td>')
-            for t in c.threats:
+            for t in (t for t in c.threats if t.active):
                 table_rows.append((
-                    F'<a href="#{id_format(t.id)}">'
-                    F'<div class="label threat-label '
+                    F'<a href="#{id_format(t.id)}"><div>'
+                    F'<span class="status threat-status '
                     F'risk-{t.calculate_risk().name.lower()}">'
-                    F'{t.label}</div></a>'
+                    F'&nbsp;</span><span class="label threat-label">'
+                    F'{t.label}</span></div></a>'
                 ))
             table_rows.append('</td>')
 
         table_rows.append('<td>')
-        table_rows.append('<div class="{}">{}</div>'.format(
+        table_rows.append('<span class="{}">{}</span>'.format(
             F"description {class_prefix}-description" if c.description
             else 'dash',
             c.description.replace('\n', '<br>') or '-'
@@ -92,18 +113,9 @@ def build_table_rows(class_prefix, component_list):
     return table_rows
 
 
-def build_assumption_table(assumptions):
-    headers = ['#', 'Disprove', 'Description']
-    return table_from_list(
-        'assumption-table',
-        headers,
-        build_table_rows(ASSUMPTION, assumptions)
-    )
-
-
-def build_data_table(data):
+def build_data_table(components):
     headers = ['#', 'Data', 'Description']
-    data = sorted(data, key=attrgetter('label'))
+    data = sorted(yield_data(components), key=attrgetter('label'))
     data.sort(key=attrgetter('classification'), reverse=True)
     return table_from_list(
         'data-table',
@@ -112,9 +124,9 @@ def build_data_table(data):
     )
 
 
-def build_threat_table(threats):
-    headers = ['#', 'Active Threat', 'Applicable Measures', 'Description']
-    threats = sorted(threats, key=attrgetter('label'))
+def build_threat_table(components):
+    headers = ['#', 'Security Threat', 'Applicable Measures', 'Description']
+    threats = sorted(yield_threats(components), key=attrgetter('label'))
     threats.sort(key=methodcaller('calculate_risk'), reverse=True)
     return table_from_list(
         'threat-table',
@@ -123,9 +135,9 @@ def build_threat_table(threats):
     )
 
 
-def build_measure_table(measures):
+def build_measure_table(components):
     headers = ['#', 'Security Measure', 'Mitigable Threats', 'Description']
-    measures = sorted(measures, key=attrgetter('label'))
+    measures = sorted(yield_measures(components), key=attrgetter('label'))
     measures.sort(key=attrgetter('capability'), reverse=True)
     return table_from_list(
         'measure-table',
@@ -134,96 +146,172 @@ def build_measure_table(measures):
     )
 
 
-def organize_elements(graph, elements):
-    central_elements = max([
-        [e for e in elements if e.profile is Profile.BLACK],
-        [e for e in elements if e.profile in [Profile.GRAY, Profile.GREY]],
-        [e for e in elements if e.profile is Profile.WHITE],
-    ], key=lambda l: len(l))
-
-    if not central_elements:
-        return
-
-    row_count = max(2, len(central_elements) // 2)
-    row_subgraph = Digraph(name='rows')
-    for i in range(1, row_count):
-        row_subgraph.edge(F"{i}", F"{i+1}", style='invis')
-    row_subgraph.node_attr.update(style='invis', shape='plain')
-    graph.subgraph(row_subgraph)
-
-    for i in range(row_count):
-        rank_subgraph = Digraph()
-        rank_subgraph.attr(rank='same')
-        for e in central_elements[i::row_count]:
-            rank_subgraph.node(F"{i+1}")
-            rank_subgraph.node(e.id)
-        graph.subgraph(rank_subgraph)
-
-
-ElementGroup = namedtuple('ElementGroup', 'label, elements')
-def find_group(label, group_list):
-    for item in group_list:
-        if isinstance(item, ElementGroup) and item.label == label:
-            return item
-
-
-def group_elements(elements):
-    grouped_elements = list()
-    for e in elements:
-        if not e.clusters:
-            grouped_elements.append(e)
+def place_elements(top_graph, elements, options, randomizer=None):
+    cluster_graphs = {'top_graph': top_graph}
+    for clusters, _elements in groupby(elements, key=attrgetter('clusters')):
+        _elements = list(_elements)
+        if randomizer is not None:
+            randomizer.shuffle(_elements)
+        if not clusters:
+            for e in _elements:
+                add_node(top_graph, e, options)
             continue
-        active_list = grouped_elements
-        for i, g in enumerate(e.clusters):
-            element_group = find_group(g, active_list)
-            if element_group is None:
-                element_group = ElementGroup(g.label, list())
-                active_list.append(element_group)
-            active_list = element_group.elements
-            if i == len(e.clusters) - 1:
-                active_list.append(e)
-    return grouped_elements
+        _clusters = list(clusters)
+        _clusters.reverse()
+        if len(_clusters) == 1:
+            _clusters.append('top_graph')
+        for child_label, parent_label in zip(_clusters, _clusters[1:]):
+            # Graphviz requirement: name must start with 'cluster_'.
+            child = cluster_graphs.setdefault(child_label, Digraph(name=F"cluster_{child_label}"))
+            child.attr(label=child_label, **options['cluster_attrs'])
+            e_labels = list()
+            for e in _elements:
+                e_labels.append(F"- {e.label}")
+                add_node(child, e, options)
+            child.attr(tooltip=(F"{child_label}:\n") + '\n'.join(e_labels))
+            parent = cluster_graphs.setdefault(parent_label, Digraph(name=F"cluster_{parent_label}"))
+            if parent is not cluster_graphs['top_graph']:
+                parent.attr(label=parent_label, tooltip=parent_label, **options['cluster_attrs'])
+            parent.subgraph(child)
 
 
-def build_subgraph(parent_graph, items):
-    for item in items:
-        if isinstance(item, ElementGroup):
-            # Graphviz requirement: name must start with 'cluster'.
-            sub = Digraph(name=F"cluster_{item.label}")
-            sub.attr(label=item.label, tooltip=item.label, style='dashed', color='grey')
-            build_subgraph(sub, item.elements)
-            parent_graph.subgraph(sub)
-        else:  # it's an Element
-            add_node(parent_graph, item)
+def get_diagram_options(merge_options=dict()):
+    options = {
+        'combine': False,
+        'no_numbers': False,
+        'seed': None,
+        'wrap_labels': None,
+        'graph_attrs': {
+            'bgcolor': 'transparent',
+            'fontname': 'Monospace',
+            'fontsize': '16',
+            'pad': '0.25',
+            'rankdir': 'TB',
+            'splines': 'ortho',
+            'tooltip': ' ',
+        },
+        'cluster_attrs': {
+            'style': 'dashed,filled,rounded',
+            'fillcolor': '#FFD70020',
+            'color': 'gold'
+        },
+        'node_attrs': {
+            'fontname': 'Monospace',
+            'fontsize': '14',
+            'style': 'filled',
+        },
+        'edge_attrs': {
+            'labelangle': '12',
+            'labeldistance': '2',
+            'labelfontname': 'Monospace',
+            'labelfontsize': '8',
+            'minlen': '2',
+        },
+    }
+    options['graph_attrs'  ].update(merge_options.pop('graph_attrs'  , {}))
+    options['cluster_attrs'].update(merge_options.pop('cluster_attrs', {}))
+    options['node_attrs'   ].update(merge_options.pop('node_attrs'   , {}))
+    options['edge_attrs'   ].update(merge_options.pop('edge_attrs'   , {}))
+    options.update(merge_options)
+    return options
 
 
-def build_diagram(elements, interactions, fmt=None, omit_numbers=False):
-    elements = list(elements)  # to be able to iterate more than once.
+def find_parallel(interactions, interaction):
+    return [
+        i for i in interactions
+        if ((i.source is interaction.source and i.target is interaction.target)
+        or  (i.source is interaction.target and i.target is interaction.source))
+    ]
+
+
+def get_tooltip(interaction):
+    # Data should already sorted by classification.
+    data_labels = [F"\t- {d.label}" for d in interaction.data_threats]
+    tooltip = F"{interaction.id}\t"
+    if interaction.action in (Action.PROCESS, Action.STORE):
+        tooltip += F"{interaction.action.value.title()}:"
+    else:
+        tooltip += F"{interaction.source.label} > {interaction.target.label}:"
+    tooltip = tooltip.replace('\n', ' ') + '\n' + '\n'.join(data_labels)
+    return tooltip
+
+
+# TODO table for elements, add source/target in interactions table
+def build_diagram(components, options=dict(), fmt=None):
+    global logger
+    options = get_diagram_options(merge_options=options)
+
+    r = None
+    seed = options['seed']
+    if seed is not None:
+        r = Random((seed := str(randint(1, 9001))) if seed == 'random' else seed)
+        logger.info(F"Seed is: {seed}")
+
     dot = Digraph()
-    dot.attr(rankdir='TB', newrank='false')
+    dot.graph_attr = options['graph_attrs']
+    dot.node_attr  = options['node_attrs' ]
+    dot.edge_attr  = options['edge_attrs' ]
 
-    organize_elements(dot, elements)
-    build_subgraph(dot, group_elements(elements))
+    elements = sorted(
+        yield_elements(components),
+        key=attrgetter('clusters'),
+        reverse=True
+    )
+    place_elements(dot, elements, options, randomizer=r)
 
-    _interactions = sorted(interactions, key=attrgetter('created'))
+    weights=['10', '0', '5']
+    if r is not None:
+        r.shuffle(weights)
+    profile_weights = {k: v for k, v in zip(Profile, weights)}
+
+    skip = list()
     attributes = dict()
-    for i_index, interaction in enumerate(_interactions):
-        data_ids = sorted([str(d) for d in interaction.data_threats])
-        tooltip = '\n'.join(data_ids)
+    ordered_interactions = sorted(yield_interactions(components), key=attrgetter('id'))
+    for interaction in ordered_interactions:
+        if interaction in skip:
+            continue
+
         attributes = {
-            'edgetooltip': tooltip,
-            'URL': F"#interaction-{i_index + 1}",
+            'id': F"edge-{interaction.id}",
+            'URL': F"#interaction-{interaction.id}",
         }
-        if not omit_numbers:
+
+        selected_interactions = [interaction]
+        if options['combine']:
+            selected_interactions = find_parallel(ordered_interactions, interaction)
+            if not all(
+                a.source is b.source and a.target is b.target
+                for a, b in combinations(selected_interactions, 2)
+            ):
+                attributes.update({'dir': 'both'})
+            skip.extend(selected_interactions)
+
+        if 'color' not in options['edge_attrs']:
             attributes.update({
-                'label': F"  {i_index + 1} ",
-                'labeltooltip': tooltip,
-                'decorate': 'true',
+                'color': {
+                    0: 'Grey',
+                    1: 'Black',
+                    2: 'Gold',
+                    3: 'Tomato',
+                }.get(max(si.highest_risk for si in selected_interactions))
             })
+
+        tooltip = '\n'.join(get_tooltip(si) for si in selected_interactions)
+        attributes.update({'edgetooltip': tooltip})
+        if not options['no_numbers']:
+            attributes.update({
+                'taillabel': str(interaction.id),
+                'tailtooltip': tooltip,
+            })
+
+        if interaction.source is interaction.target:
+            attributes.update({'tailport': 'n', 'headport': 's'})
+
         dot.edge(
             interaction.source.id,
             interaction.target.id,
             _attributes=attributes,
+            weight=profile_weights.get(interaction.source.profile),
         )
 
     if fmt is not None:
@@ -233,118 +321,177 @@ def build_diagram(elements, interactions, fmt=None, omit_numbers=False):
     # Return the wrapped SVG source:
     dot.format = 'svg'
     return (
-        '\n\n<div id="diagram">\n'
-        F"{dot.pipe().decode('utf-8').strip()}\n"
+        '<div id="diagram">'
+        F"{dot.pipe().decode('utf-8')}"
         '</div>'
     )
 
 
-def add_node(graph, element):
-    # Role defines node shape
-    shape = {
-        Role.SERVICE: 'oval',
-        Role.STORAGE: 'box3d'
-    }.get(element.role, 'box')
-
-    # Set proper background + text contrast
-    fillcolor, fontcolor = {
-        Profile.BLACK: ('black', 'white'),
-        Profile.GRAY: ('dimgrey', 'white'),
-        Profile.GREY: ('dimgrey', 'white'),
-    }.get(element.profile, ('white', 'black'))
-
-    graph.node(
-        element.id,
-        label=element.label,
-        shape=shape,
-        style='filled',
-        color='black',
-        fontcolor=fontcolor,
-        fillcolor=fillcolor,
-        tooltip='\n'.join([l.strip() for l in str(element).splitlines()]),
+def get_storage_shape(color, label):
+    stripe_row = '<tr><td bgcolor="Black"></td></tr>'
+    label_row = '<tr><td bgcolor="{}" color="{}" cellpadding="8">{}</td></tr>'
+    label_row = label_row.format(color, color, label.replace('\n', '<br/>'))
+    cellspacing = 1
+    if color == 'Black':
+        cellspacing = 4
+    return (
+        F'<<table border="0" cellborder="1" cellspacing="{cellspacing}">'
+        + stripe_row
+        + label_row
+        + stripe_row
+        + '</table>>'
     )
 
 
-def build_threats_cell(threats, classification, interaction_table, rowspan=1):
-    interaction_table.append(F"<td rowspan={rowspan}>")
+# TODO expose more options?
+def add_node(graph, element, options):
+    # Role defines node shape
+    shape, _margin = {
+        Role.AGENT  : ('box' , '0.10,0.15'),
+        Role.SERVICE: ('oval', '0.00,0.15'),
+        Role.STORAGE: ('none', '0.00,0.00'),
+    }.get(element.role)
+
+    # Set proper background + text contrast
+    fillcolor, fontcolor = {
+        Profile.BLACK: ('Black'     , 'WhiteSmoke'),
+        Profile.GREY : ('Grey'      , 'WhiteSmoke'),
+        Profile.WHITE: ('WhiteSmoke', 'Black'     ),
+    }.get(element.profile)
+
+    label = element.label
+    wrap_width = options['wrap_labels']
+    if wrap_width is not None:
+        label = '\n'.join(wrap(label, width=wrap_width))
+
+    if element.role is Role.STORAGE:
+        label = get_storage_shape(fillcolor, label)
+        fillcolor = 'transparent'
+
+    tooltip = F"{element.description}\n" if element.description else ''
+    tooltip += '\n'.join(
+        get_tooltip(i)
+        for i in sorted(element.interactions, key=attrgetter('id'))
+    )
+
+    # Helps organize the graph:
+    sub = Digraph(name=F"cluster_{element.id}")
+    sub.attr(style='invis', label='')
+    if (sub_margin := options['cluster_attrs'].get('margin', '')):
+        sub.attr(margin=sub_margin)
+    sub.node(
+        element.id,
+        id=element.id,
+        label=label,
+        fillcolor=fillcolor,
+        fontcolor=fontcolor,
+        margin=_margin,
+        shape=shape,
+        tooltip=tooltip,
+    )
+    graph.subgraph(sub)
+
+
+def build_threats_cell(threats, classification, rowspan=1):
+    cell = [F"<td rowspan={rowspan}>"]
     for t in threats:
         risk_level = t.calculate_risk(classification).name.lower()
-        interaction_table.append((
-            F'<a href="#{id_format(t.id)}">'
-            F'<div class="label threat-label risk-{risk_level}">{t.label}</div></a>'
+        cell.append((
+            F'<a href="#{id_format(t.id)}"><div>'
+            F'<span class="status risk-status risk-{risk_level}">&nbsp;</span>'
+            F'<span class="label risk-label">{t.label}</span></div></a>'
         ))
         for m in t.measures:
             if not m.active:
                 continue
-            interaction_table.append((
+            cell.append((
                 F'<a href="#{id_format(m.id)}">'
-                F'<div class="label mitigation-label '
-                F"imperative-{m.imperative.name.lower()} "
-                F"capability-{m.capability.name.lower()} "
-                F'status-{m.status.name.lower()}">'
-                F'{m.label}</div></a>'
+                F'<div><span class="status mitigation-status '
+                F'status-{m.status.name.lower()} '
+                F'capability-{m.capability.name.lower()}">&nbsp;</span>'
+                F'<span class="label mitigation-label '
+                F'imperative-{m.imperative.name.lower()}">'
+                F"{m.label}</span></div></a>"
             ))
-    interaction_table.append('</td>')
+    cell.append('</td>')
+    return cell
 
 
-def build_interaction_table(interactions):
-    interaction_table = list()
-    headers = ['#', 'Data', 'Data Threats', 'Interaction Threats', 'Notes']
-    _interactions = sorted(interactions, key=attrgetter('created'))
-    for i_index, interaction in enumerate(_interactions):
-        interaction_rowspan = len(interaction.data_threats.values())
-        interaction_table.append('<tr>')
-        interaction_table.append((
-            F'<td rowspan="{interaction_rowspan}">'
-            F'<a href=#diagram><div id="interaction-{i_index + 1}" '
-            F'class="row-number interaction-number">'
-            F"{i_index + 1}</div></a></td>"
+def build_interaction_rows(edge_num, interaction):
+    rows = list()
+    interaction_rowspan = len(interaction.data_threats.values())
+    rows.append((
+        F'<tr><td rowspan="{interaction_rowspan}">'
+        F'<a href=#edge-{edge_num}>'
+        F'<span class="row-number interaction-number">'
+        F"{interaction.id}</span></a></td>"
+    ))
+
+    di = 0
+    for datum, threats in interaction.data_threats.items():
+        if di > 0:
+            rows.append('<tr>')
+        rows.append((
+            F'<td><a href="#{id_format(datum.id)}"><div>'
+            F'<span class="status data-status '
+            F'classification-{datum.classification.name.lower()}">'
+            F'&nbsp;</span><span class="label data-label">'
+            F'{datum.label}</span></div></a></td>'
         ))
 
-        di = 0
-        for datum, threats in interaction.data_threats.items():
-            if di > 0:
-                interaction_table.append('<tr>')
-            interaction_table.append((
-                F'<td><a href="#{id_format(datum.id)}"><div class="label data-label '
-                F'classification-{datum.classification.name.lower()}">'
-                F'{datum.label}</div></a></td>'
+        if not threats:
+            rows.append('<td><span class="dash">-</span></td>')
+        else:
+            rows.extend(build_threats_cell(
+                threats,
+                datum.classification,
             ))
 
-            if not threats:
-                interaction_table.append('<td><div class="dash">-</div></td>')
-            else:
-                build_threats_cell(
-                    threats,
-                    datum.classification,
-                    interaction_table
-                )
-
-            if di == 0:
-                if not interaction.broad_threats:
-                    interaction_table.append((
-                        F'<td rowspan="{interaction_rowspan}">'
-                        '<div class="dash">-</div></td>'
-                    ))
-                else:
-                    build_threats_cell(
-                        interaction.broad_threats,
-                        interaction.highest_classification,
-                        interaction_table,
-                        rowspan=interaction_rowspan
-                    )
-
-                interaction_table.append(
+        if di == 0:
+            if not interaction.interaction_threats:
+                rows.append((
                     F'<td rowspan="{interaction_rowspan}">'
-                )
-                interaction_table.append('<div class="{}">{}</div>'.format(
-                    'interaction-notes' if interaction.notes
-                    else 'dash',
-                    interaction.notes.replace('\n', '<br>') or '-'
+                    '<span class="dash">-</span></td>'
                 ))
-                interaction_table.append('</td>')
+            else:
+                rows.extend(build_threats_cell(
+                    interaction.interaction_threats,
+                    interaction.highest_classification,
+                    rowspan=interaction_rowspan
+                ))
 
-            interaction_table.append('</tr>')
-            di += 1
+            rows.append(
+                F'<td rowspan="{interaction_rowspan}">'
+            )
+            rows.append('<span class="{}">{}</span>'.format(
+                'interaction-notes' if interaction.description
+                else 'dash',
+                interaction.description.replace('\n', '<br>') or '-'
+            ))
+            rows.append('</td>')
 
+        rows.append('</tr>')
+        di += 1
+    return rows
+
+def build_interaction_table(components, combine):
+    interaction_table, skip = list(), list()
+    ordered_interactions = sorted(yield_interactions(components), key=attrgetter('id'))
+    for interaction in ordered_interactions:
+        if interaction in skip:
+            continue
+        interaction_table.append(F'<tbody id="interaction-{interaction.id}">')
+
+        selected_interactions = [interaction]
+        if combine:
+            selected_interactions = find_parallel(ordered_interactions, interaction)
+            skip.extend(selected_interactions)
+
+        for si in selected_interactions:
+            interaction_table.extend(
+                build_interaction_rows(interaction.id, si)
+            )
+        interaction_table.append('</tbody>')
+    headers = ['#', 'Data', 'Data Risks', 'Interaction Risks', 'Notes']
     return table_from_list('interaction-table', headers, interaction_table)
+

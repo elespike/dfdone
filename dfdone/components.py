@@ -1,4 +1,4 @@
-from datetime import datetime as dt
+from itertools import chain
 from operator import attrgetter, methodcaller
 
 from dfdone.enums import (
@@ -14,6 +14,7 @@ from dfdone.enums import (
 
 class Component:
     def __init__(self, label, description):
+        self.active = False
         self._id = label  # the original label will serve as a read-only ID
         self.label = label  # this label property can be modified
         self.description = description
@@ -37,70 +38,47 @@ class Datum(Component):
         self.classification = classification
 
 
-class Interaction:
-    def __init__(self, timestamp, action, source, target,
-                 data_threats, broad_threats, notes):
-        self.created = timestamp
-        self.action = action
-        self.source = source
-        self.target = target
-
-        # Sort by data classification, high to low:
-        data_threats = {
-            k: v for k, v in sorted(
-                data_threats.items(),
-                key=lambda i: i[0].classification,
-                reverse=True
-            )
-        }
-        self.data_threats = data_threats
-        self.broad_threats = broad_threats
-
-        self.notes = notes
-
-    @property
-    def highest_classification(self):
-        return max(d.classification for d in self.data_threats)
-
-
 class Element(Component):
     def __init__(self, label, profile, role, clusters, description):
         super().__init__(label, description)
         self.role = role
         self.profile = profile
         self.clusters = clusters
-        self.interactions = list()
+        self.interactions = set()
 
-    @staticmethod
-    def interact(action, source, destination,
-                 data_threats, broad_threats, notes):
-        source.interactions.append(Interaction(
-            dt.utcnow().timestamp(),
-            action,
-            source,
-            destination,
-            data_threats,
-            broad_threats,
-            notes
-        ))
+class Interaction(Component):
+    ORDINAL = 0
+    def __init__(self, action, source, target, data, description):
+        if action not in Action:
+            raise ValueError('action must be one of dfdone.enums.Action')
 
-    def processes(self, data_threats, broad_threats, notes):
-        Element.interact(Action.PROCESS, self, self,
-                         data_threats, broad_threats, notes)
+        Interaction.ORDINAL += 1
+        super().__init__(Interaction.ORDINAL, description)
 
-    def receives(self, source_element,
-                 data_threats, broad_threats, notes):
-        Element.interact(Action.RECEIVE, source_element, self,
-                         data_threats, broad_threats, notes)
+        self.active = True
+        self.action = action
+        self.label = str(self.id)
 
-    def sends(self, destination_element,
-              data_threats, broad_threats, notes):
-        Element.interact(Action.SEND, self, destination_element,
-                         data_threats, broad_threats, notes)
+        self.source = source
+        self.target = target
 
-    def stores(self, data_threats, broad_threats, notes):
-        Element.interact(Action.STORE, self, self,
-                         data_threats, broad_threats, notes)
+        data = sorted(data, key=attrgetter('classification'), reverse=True)
+        self.data_threats = {d: set() for d in data}
+        self.interaction_threats = set()
+
+        self.source.active, self.target.active = True, True
+        self.source.interactions.add(self)
+        self.target.interactions.add(self)
+
+    @property
+    def highest_risk(self):
+        return max((t.calculate_risk(self.highest_classification) for t in chain(
+            *self.data_threats.values(), self.interaction_threats
+        )), default=0)
+
+    @property
+    def highest_classification(self):
+        return max(d.classification for d in self.data_threats)
 
 
 class Threat(Component):
@@ -117,7 +95,6 @@ class Threat(Component):
     def __init__(self, label, impact, probability, description):
         super().__init__(label, description)
         self.impact, self.probability = impact, probability
-        self.active = False
         self._measures = set()
 
     @property
@@ -156,7 +133,6 @@ class Measure(Component):
     def __init__(self, label, capability, description):
         super().__init__(label, description)
         self.capability = capability
-        self.active = False
         self._threats = set()
         self.imperative = Imperative.MUST
         self.status = Status.PENDING

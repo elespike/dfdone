@@ -1,6 +1,9 @@
 # Threats can be high/medium/low impact/severity,
 #   and high/medium/low probability/likelihood.
 
+"Lack of TLS" is a high impact, high probability threat
+"Improper Error Handling" is a medium impact, medium probability threat
+
 "Cross-Site Scripting" is a high impact, high probability threat
 # Optional alias, has no effect on the diagram;
 #   it simply allows for shortcuts in this file,
@@ -14,5 +17,8 @@
 "Command Injection" is a high impact, high probability threat
 # Alias
 "cmdi" is "Command Injection"
+
+# Group alias
+"injection" is "xss", "sqli", "cmdi"
 
 "Information Disclosure" is a high impact, low probability threat

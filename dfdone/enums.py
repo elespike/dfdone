@@ -1,3 +1,4 @@
+# IntEnum for comparisons and calculations.
 from enum import Enum, IntEnum, auto, unique
 
 
@@ -18,7 +19,6 @@ class Role(Enum):
 @unique
 class Profile(Enum):
     BLACK = 'black'
-    GRAY = 'gray'
     GREY = 'grey'
     WHITE = 'white'
 
@@ -52,7 +52,6 @@ class Risk(IntEnum):
     HIGH = auto()
 
 
-# Using IntEnum to be able to easily sort by Imperative.
 @unique
 class Imperative(IntEnum):
     NONE = auto()
@@ -71,7 +70,6 @@ class Capability(IntEnum):
 
 
 @unique
-# Using IntEnum to be able to easily sort by Status.
 class Status(IntEnum):
     PENDING = auto()
     IMPLEMENTED = auto()
@@ -79,6 +77,9 @@ class Status(IntEnum):
 
 
 def get_property(name, source_enum):
+    if name == 'gray':
+        name = 'grey'
     for prop in source_enum:
         if name.upper() == prop.name:
             return prop
+

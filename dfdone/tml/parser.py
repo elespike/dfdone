@@ -1,5 +1,5 @@
-from copy import copy, deepcopy
-from itertools import combinations, starmap
+from copy import deepcopy
+from itertools import combinations, product
 from logging import getLogger
 from pathlib import Path
 
@@ -9,8 +9,9 @@ from dfdone.components import (
     Component,
     Datum,
     Element,
+    Interaction,
     Measure,
-    Threat
+    Threat,
 )
 from dfdone.component_generators import (
     yield_data,
@@ -28,21 +29,23 @@ from dfdone.enums import (
     Status,
     get_property,
 )
-from dfdone.tml.grammar import constructs
+from dfdone.tml.grammar import constructs, validate_path
 
 
 HL = '\N{ESC}[7m{}\N{ESC}[0m'
 
 class Parser:
-    def __init__(self, model_file, check_file=False, log_level=None):
+    def __init__(self, model_file, check_file=False):
+        # TODO keep this here?
+        Interaction.ORDINAL = 0
         self.model_file = model_file
         self.check_file = check_file
+        self.logger = getLogger(__name__)
 
-        self.logger = getLogger('dfdone.cli.parser')
-        if log_level is not None:
-            self.logger.setLevel(log_level)
+        self.included_files = set()
+        if hasattr(model_file, 'name'):
+            self.included_files.add(Path(model_file.name).resolve())
 
-        self.assumptions = list()
         self.components = dict()
         self.component_groups = dict()
 
@@ -68,7 +71,7 @@ class Parser:
         >>> with StringIO(data) as model_file:
         ...     parser.parse(other_file=model_file)
         ...
-        [(['DB', 'is a', 'white-box', 'storage'], {'label': ['DB'], 'profile': ['white'], 'role': ['storage']})]
+        [ParseResults(['DB', 'white', 'storage'], {'label': 'DB', 'profile': 'white', 'role': 'storage'})]
         """
         target_file = other_file or self.model_file
         data = target_file.read()
@@ -114,6 +117,7 @@ class Parser:
         >>> data
         [data 1, data 2]
         """
+
         components = list()
         for c in component_list:
             label = c
@@ -124,10 +128,10 @@ class Parser:
                 components.append(self.components[label])
         if not all(isinstance(c, of_type) for c in components):
             self.logger.warning(
-                'Please verify the statement where these components are referenced together:\n'
+                'Please verify the statements involving these components:\n'
                 F"\t{', '.join('{} ({})'.format(repr(c), type(c).__name__) for c in components)}\n"
-                '\tWhile DFDone successfully parsed the statement, '
-                'their type mismatch could indicate a mistake.\n'
+                '\tWhile the syntax was correct, at least one of the statements\n'
+                '\tindicates an incompatible action, such as sending data to a threat.\n'
                 '\tRefer to the examples directory for additional guidance.'
             )
         return [c for c in components if isinstance(c, of_type)]
@@ -137,63 +141,51 @@ class Parser:
         # "dfdone.tml.grammar.constructs", which means that the order of
         # "constructs" is what dictates the order of operations.
         for r in parsed_results:
-            components = self.compile_components([r.label])
             if r.path:
-                self.include_file(r.path, r.label)
-                self.process_exceptions(r.exceptions, r.label)
-            elif r.assumptions:
-                self.assumptions.extend(self.compile_components(r.assumptions))
+                self.include_file(r.path)
             # Don't combine the two conditions below into a single one;
             # otherwise, modifications will be treated as individual threats.
             elif r.modify:
-                for c in components:
+                for c in self.compile_components([r.label]):
                     self.modify_component(r, c)
             elif r.action:
                 self.build_interaction(r)
-            elif components and all(isinstance(c, Measure) for c in components):
+            elif r.risk:
+                self.apply_threats(r)
+            elif r.implemented or r.verified:
                 self.apply_measures(r)
             elif r.label:
+                # TODO warn if replacing existing
                 self.build_component(r)
 
-    def include_file(self, fpath, group_label):
-        for parent in reversed(self.directory.parents):
-            file_or_dir = None
-            for fsobj in parent.glob(F"*/{fpath}"):
-                file_or_dir = fsobj
-                break  # the first result is the desired one.
-            if file_or_dir is None:
-                continue
+    def include_file(self, fpath):
+        if not validate_path([fpath]):
+            self.logger.warning(F"Skipping {fpath}: invalid file path!")
+            return
 
-            if file_or_dir.is_dir():
-                for item in file_or_dir.iterdir():
-                    self.include_file(str(item.resolve()), group_label)
-            elif file_or_dir.is_file():
-                # Save the current state of self.components to be able
-                # to determine what changed in the upcoming recursion.
-                _components = copy(self.components)
-                with file_or_dir.open() as f:
-                    self.exercise_directives(
-                        self.parse(other_file=f)
-                    )
-                # Select only the components added during recursion.
-                diff = [
-                    v for k, v in self.components.items()
-                    if k not in _components
-                ]
-                if group_label in self.component_groups:
-                    self.component_groups[group_label].extend(diff)
-                elif group_label:
-                    self.component_groups[group_label] = diff
-                break
-        else:
+        _file = None
+        for directory in [self.directory] + list(self.directory.parents):
+            if (_fpath := directory.joinpath(fpath)).is_file():
+                _file = _fpath
+
+        if _file is None:
             self.logger.warning(
                 F"Unable to find {fpath} under {self.directory} "
                 'or any of its parent directories!'
             )
+            return
 
-    def process_exceptions(self, exceptions, group_label):
-        for c in self.compile_components(exceptions):
-            self.component_groups[group_label].remove(c)
+        if _file.resolve() in self.included_files:
+            self.logger.info(F"Skipping {fpath}, as it was previously included.")
+            return
+
+        self.logger.info(F"Including {fpath}...")
+        try:
+            with _file.open() as f:
+                self.exercise_directives(self.parse(other_file=f))
+                self.included_files.add(_file.resolve())
+        except PermissionError:
+            self.logger.warning(F"Skipping {fpath}: permission error!")
 
     def build_component(self, parsed_result):
         """
@@ -205,6 +197,10 @@ class Parser:
         ...     parser.build_component(result)
         ...
         >>> expected_keys = {
+        ...     # Two interactions
+        ...     1,
+        ...     2,
+        ...     # Components
         ...     'agent 1',
         ...     'service 1',
         ...     'storage 1',
@@ -233,67 +229,76 @@ class Parser:
             self.build_measure(parsed_result)
 
         elif parsed_result.label_list:
-            group = list()
-            group_members = self.compile_components(parsed_result.label_list)
+            if parsed_result.label in self.components:
+                # Adding an alias using an existing component's name!
+                self.logger.warning(
+                    F"The alias \"{parsed_result.label}\" will be created;\n"
+                    '\thowever, it will replace an existing component of the same name!'
+                )
+                del self.components[parsed_result.label]
+            group = self.compile_components(parsed_result.label_list)
             if all(
                 type(a) == type(b)
-                for a, b in combinations(group_members, 2)
+                for a, b in combinations(group, 2)
             ):
-                group.extend(set(group_members))
                 self.component_groups[parsed_result.label] = group
             else:
                 self.logger.warning(
-                    F"The following components will not be grouped with the label \"{parsed_result.label}\":\n"
-                    F"\t{', '.join('{} ({})'.format(repr(c), type(c).__name__) for c in group_members)}\n"
+                    F"The following components will not be grouped under the alias \"{parsed_result.label}\":\n"
+                    F"\t{', '.join('{} ({})'.format(repr(c), type(c).__name__) for c in group)}\n"
                     '\tAll components you wish to group must be of the same type.'
                 )
 
     def build_element(self, parsed_result):
         profile = get_property(parsed_result.profile, Profile)
         role = get_property(parsed_result.role, Role)
-        self.components[parsed_result.label] = Element(
+        element = Element(
             parsed_result.label,
             profile,
             role,
-            parsed_result.clusters,
-            parsed_result.description
+            [c.label for c in parsed_result.clusters],
+            parsed_result.description,
         )
+        if parsed_result.new_label:
+            element.label = parsed_result.new_label
+        self.components[parsed_result.label] = element
 
     def build_datum(self, parsed_result):
         classification = get_property(
             parsed_result.classification,
-            Classification
+            Classification,
         )
         self.components[parsed_result.label] = Datum(
             parsed_result.label,
             classification,
-            parsed_result.description
+            parsed_result.description,
         )
 
     def build_threat(self, parsed_result):
         impact = get_property(
             parsed_result.impact,
-            Impact
+            Impact,
         )
         probability = get_property(
             parsed_result.probability,
-            Probability
+            Probability,
         )
         self.components[parsed_result.label] = Threat(
             parsed_result.label,
             impact,
             probability,
-            parsed_result.description
+            parsed_result.description,
         )
 
     def build_measure(self, parsed_result):
-        mitigable_threats = self.compile_components(parsed_result.threat_list)
+        mitigable_threats = self.compile_components(
+            parsed_result.threat_list, of_type=Threat)
         if not mitigable_threats:
             return
         measure = Measure(
             parsed_result.label,
             get_property(parsed_result.capability, Capability),
-            parsed_result.description
+            parsed_result.description,
         )
         self.components[parsed_result.label] = measure
         for threat in mitigable_threats:
@@ -306,100 +311,123 @@ class Parser:
         if parsed_result.profile and hasattr(component, 'profile'):
             component.profile = get_property(
                 parsed_result.profile,
-                Profile
+                Profile,
             )
         if parsed_result.role and hasattr(component, 'role'):
             component.role = get_property(
                 parsed_result.role,
-                Role
+                Role,
             )
         if parsed_result.clusters and hasattr(component, 'clusters'):
-            component.clusters = parsed_result.clusters
+            component.clusters = [c.label for c in parsed_result.clusters]
 
         if (parsed_result.classification
         and hasattr(component, 'classification')):
             component.classification = get_property(
                 parsed_result.classification,
-                Classification
+                Classification,
             )
         if parsed_result.impact and hasattr(component, 'impact'):
             component.impact = get_property(
                 parsed_result.impact,
-                Impact
+                Impact,
             )
         if parsed_result.probability and hasattr(component, 'probability'):
             component.probability = get_property(
                 parsed_result.probability,
-                Probability
+                Probability,
             )
         if parsed_result.capability and hasattr(component, 'capability'):
             component.capability = get_property(
                 parsed_result.capability,
-                Capability
+                Capability,
             )
         if parsed_result.threat_list and hasattr(component, 'threats'):
             for t in component.threats:
                 t._measures.remove(component)
             component._threats = set(self.compile_components(
-                [t.label for t in parsed_result.threat_list]
+                [t.label for t in parsed_result.threat_list],
+                of_type=Threat
             ))
             for t in component.threats:
                 t._measures.add(component)
-        if parsed_result.new_name and hasattr(component, 'label'):
-            component.label = parsed_result.new_name
+        if parsed_result.new_label and hasattr(component, 'label'):
+            component.label = parsed_result.new_label
 
         if parsed_result.description and hasattr(component, 'description'):
             component.probability = parsed_result.description
 
     def build_interaction(self, parsed_result):
-        parsed_result.action = get_property(parsed_result.action, Action)
-        data_threats = dict()
-        for effect in parsed_result.effect_list:
-            self.build_datum_threats(effect, data_threats)
-        broad_threats = list()
-        self.build_broad_threats(parsed_result.threat_list, broad_threats)
-        self.trigger_actions(
-            parsed_result.action,
-            parsed_result.subject,
-            parsed_result.object,
-            data_threats,
-            broad_threats,
-            parsed_result.notes
+        data = set()
+        for datum in self.compile_components(
+                parsed_result.data_list, of_type=Datum):
+            datum.active = True
+            data.add(datum)
+        if data:
+            self.trigger_actions(
+                get_property(parsed_result.action, Action),
+                parsed_result.source,
+                parsed_result.target,
+                data,
+                parsed_result.notes,
+            )
+
+    def trigger_actions(self, action, source, target, data, notes):
+        source_elements = self.compile_components([source], of_type=Element)
+        target_elements = self.compile_components([target], of_type=Element)
+
+        """
+        Interaction(
+            action,
+            source,
+            target,
+            data,
+            description
+        )
+        source.active, target.active = True, True
+        """
+
+        if action is Action.PROCESS or action is Action.STORE:
+            pairs = zip(source_elements, source_elements)
+        elif action is Action.RECEIVE:
+            pairs = product(target_elements, source_elements)
+        elif action is Action.SEND:
+            pairs = product(source_elements, target_elements)
+
+        interactions = [
+            Interaction(action, pair[0], pair[1], data, notes)
+            for pair in pairs
+        ]
+        self.components.update({i.id: i for i in interactions})
+
+    # TODO doctests
+    def apply_threats(self, parsed_result):
+        threats = self.compile_components(
+            [parsed_result.label], of_type=Threat)
+        affected_data = self.affected_data(
+            parsed_result.data_list,
+            parsed_result.data_exceptions
+        )
+        affected_interactions = self.affected_interactions(
+            self.affected_element_pairs(parsed_result)
         )
 
-    def build_datum_threats(self, effect, data_threats):
-        for d in self.compile_components([effect.label]):
-            data_threats[d] = list()
-            for t in self.compile_components(effect.threat_list, of_type=Threat):
-                t.active = True
-                # Using deepcopy() because each mitigation application
-                # should modify its own instance of Threat as well as
-                # its own instances of Threat._measures.
-                data_threats[d].append(deepcopy(t))
-
-    def build_broad_threats(self, threat_list, broad_threats):
-        for t in self.compile_components(threat_list):
-            t.active = True
-            # Using deepcopy() because each mitigation application
-            # should modify its own instance of Threat as well as
-            # its own instances of Threat._measures.
-            broad_threats.append(deepcopy(t))
-
-    def trigger_actions(self, action, subject, _object, *args):
-        if action == Action.PROCESS:
-            for target in self.compile_components([subject]):
-                target.processes(*args)
-        elif action == Action.RECEIVE:
-            for target in self.compile_components([subject]):
-                for source in self.compile_components([_object]):
-                    target.receives(source, *args)
-        elif action == Action.SEND:
-            for source in self.compile_components([subject]):
-                for target in self.compile_components([_object]):
-                    source.sends(target, *args)
-        elif action == Action.STORE:
-            for target in self.compile_components([subject]):
-                target.stores(*args)
+        for i in affected_interactions:
+            if all(d in affected_data for d in i.data_threats):
+                for t in threats:
+                    t.active = True
+                    # Use deepcopy so mitigations can target specific threats.
+                    i.interaction_threats.add(deepcopy(t))
+            else:
+                affected_data_threats = {
+                    d: tl for d, tl in i.data_threats.items()
+                    if d in affected_data
+                }
+                for data, threat_list in affected_data_threats.items():
+                    for t in threats:
+                        t.active = True
+                        # Use deepcopy so mitigations can target specific threats.
+                        threat_list.add(deepcopy(t))
 
     def apply_measures(self, parsed_result):
         """
@@ -417,9 +445,9 @@ class Parser:
         ...
         >>> for interaction in yield_interactions(parser.components):
         ...     # Since measures were applied "on all data",
-        ...     # they'll be found in interaction.broad_threats
+        ...     # they'll be found in interaction.interaction_threats
         ...     # (as opposed to interaction.data_threats).
-        ...     for threat in interaction.broad_threats:
+        ...     for threat in interaction.interaction_threats:
         ...         for measure in threat.measures:
         ...             if measure.id == 'measure 1':
         ...                 assert measure.active
@@ -434,14 +462,60 @@ class Parser:
         ...                 assert False
         """
 
-        measure_ids = set(
-            c.id for c in self.compile_components([parsed_result.label])
+        measure_ids = set()
+        for c in self.compile_components(
+                [parsed_result.label], of_type=Measure):
+            c.active = True  # so it's included in the measure table.
+            measure_ids.add(c.id)
+
+        affected_data = self.affected_data(
+            parsed_result.data_list,
+            parsed_result.data_exceptions
         )
+        affected_interactions = self.affected_interactions(
+            self.affected_element_pairs(parsed_result)
+        )
+
+        for i in affected_interactions:
+            if all(d in affected_data for d in i.data_threats):
+                selected_measures = (
+                    m for t in i.interaction_threats
+                    for m in t.measures
+                    if m.id in measure_ids
+                )
+                for m in selected_measures:
+                    Parser.set_measure_properties(m, parsed_result)
+            selected_measures = (
+                m for d, tlist in i.data_threats.items()
+                for t in tlist for m in t.measures
+                if d in affected_data and m.id in measure_ids
+            )
+            for m in selected_measures:
+                Parser.set_measure_properties(m, parsed_result)
+
+    def compile_element_pairs(self, element_list, element_pair_list):
+        pairs = list()
+        for e in self.compile_components(element_list, of_type=Element):
+            pairs.append((e, e))  # because the target is itself.
+
+        # source_label and/or target_label can refer to a group.
+        for source_label, target_label in element_pair_list:
+            component_group = set(
+                self.compile_components([source_label], of_type=Element)
+                + self.compile_components([target_label], of_type=Element)
+            )
+            pairs.extend(
+                (source, target)
+                for source, target in combinations(component_group, 2)
+            )
+        return pairs
+
+    def affected_element_pairs(self, parsed_result):
         affected_pairs = self.compile_element_pairs(
             parsed_result.element_list,
             parsed_result.element_pair_list
         )
-        if not affected_pairs:  # ALL_NODES was declared
+        if not affected_pairs:  # ALL_ELEMENTS was declared
             exempt_pairs = self.compile_element_pairs(
                 parsed_result.element_exceptions,
                 parsed_result.element_pair_exceptions
@@ -450,59 +524,26 @@ class Parser:
                 (i.source, i.target)
                 for i in yield_interactions(self.components)
             }.difference(set(exempt_pairs))
+        return affected_pairs
 
+    def affected_interactions(self, affected_element_pairs):
         affected_interactions = set()
-        for e1, e2 in affected_pairs:
+        for e1, e2 in affected_element_pairs:
             affected_interactions = affected_interactions.union(
-                {i for i in e1.interactions if i.target == e2}
+                i for i in e1.interactions if i.source is e1 and i.target is e2
             )
             affected_interactions = affected_interactions.union(
-                {i for i in e2.interactions if i.target == e1}
+                i for i in e2.interactions if i.source is e2 and i.target is e1
             )
+        return affected_interactions
 
-        affected_data = set(self.compile_components(parsed_result.data_list))
+    def affected_data(self, data_list, data_exceptions):
+        affected_data = set(self.compile_components(data_list, of_type=Datum))
         if not affected_data:  # ALL_DATA was declared
-            exempt_data = self.compile_components(parsed_result.data_exceptions)
+            exempt_data = self.compile_components(data_exceptions, of_type=Datum)
             affected_data = set(yield_data(self.components))
             affected_data = affected_data.difference(set(exempt_data))
-
-        for i in affected_interactions:
-            target_measures = list()
-            all_data_affected = True
-            for data, threats in i.data_threats.items():
-                if data not in affected_data:
-                    all_data_affected = False
-                    continue
-                target_measures.extend(filter(
-                    lambda m: m.id in measure_ids,
-                    (m for t in threats for m in t.measures)
-                ))
-            if all_data_affected:
-                target_measures.extend(filter(
-                    lambda m: m.id in measure_ids,
-                    (m for t in i.broad_threats for m in t.measures)
-                ))
-            for _ in starmap(
-                Parser.set_measure_properties,
-                zip(target_measures, (parsed_result for m in target_measures))
-            ): pass
-
-    def compile_element_pairs(self, element_list, element_pair_list):
-        pairs = list()
-        for e in self.compile_components(element_list):
-            pairs.append((e, e))  # because the target is itself.
-
-        # source_label and/or target_label can refer to a group.
-        for source_label, target_label in element_pair_list:
-            component_group = set(
-                self.compile_components([source_label])
-                + self.compile_components([target_label])
-            )
-            pairs.extend(
-                (source, target)
-                for source, target in combinations(component_group, 2)
-            )
-        return pairs
+        return affected_data
 
     @staticmethod
     def set_measure_properties(measure, parsed_result):
@@ -522,3 +563,4 @@ class Parser:
                 measure.status = Status.IMPLEMENTED
             elif parsed_result.verified:
                 measure.status = Status.VERIFIED
+

@@ -5,28 +5,8 @@
 
 # To include entities defined in other files,
 # you can specify their path relative to a common parent directory:
-Include "examples/sample_threats.tml" as "injection", except for "Information Disclosure"
-# Now, all components defined in sample_threats.tml are available here.
-
-# In the above example, the construct 'as "injection"' is optional;
-# it simply creates an alias for use in the tml file.
-
-# The "except" construct only excludes items from the "injection" group/alias;
-# in other words, "Information Disclosure" will still be available for use
-# in this file, but it will not be part of the "injection" group/alias.
-
-
-> Assumptions
-=============
-
-# In DFDone, assumptions are no different than threats
-# because assumptions that aren't validated carry full risk.
-# Define them like you would define threats:
-"Lack of TLS" is a high impact, high probability threat
-"Improper Error Handling" is a medium impact, medium probability threat
-
-# The "Disprove" construct adds threats to the assumption table for validation.
-Disprove "Lack of TLS", "Improper Error Handling"
+Include "examples/sample_threats.tml"
+# Now, all components and aliases defined in sample_threats.tml are available here.
 
 
 > Diagram Elements
@@ -46,7 +26,7 @@ Disprove "Lack of TLS", "Improper Error Handling"
 "pw" is confidential data
 "session cookie" is restricted data
 
-# Optional grouping has no effect on the diagram;
+# Optional aliasing/grouping has no effect on the diagram;
 # it simply allows for shortcuts in this file.
 "backend" is "Web App", "DB"
 "creds" are "un", "pw"
@@ -68,6 +48,7 @@ Disprove "Lack of TLS", "Improper Error Handling"
 "Parameterized Queries" are a full measure against "sqli"
 "Blocking WAF" is a partial measure against "injection" described as "WAF in blocking mode"
 "Learning WAF" is a detective measure against "injection" described as "WAF in learning mode"
+"Error Handling" is a partial measure against "Information Disclosure"
 
 # Once again, optional alias has no effect on the diagram:
 "inpval" is "Input Validation"
@@ -81,15 +62,24 @@ Disprove "Lack of TLS", "Improper Error Handling"
 # Refer to sample_threats.tml for threat details.
 
 # Specific threats applied to specific data:
-"User" sends
-    "un", risking "xss";
-    "pw", risking "cmdi";
-    to "Web App".
+"User" sends "un", "pw" to "Web App".
+"Web App" sends "creds" to "DB".
+"User" receives "session cookie" from "Web App".
 
-# Threats applied to entire interaction:
-"Web App" sends "creds" to "DB", risking "sqli".
-"User" receives "session cookie" from "Web App", risking "Information Disclosure".
 
+> Security Risks
+================
+
+# Risks are threats applied to interactions.
+#
+# TODO lack of tls and improper error handling as overarching threats,
+# with their own mitigations
+# TODO better docs here, probably copy from mitigations
+
+"xss" applies to "un" between "User" and "Web App".
+"cmdi" applies to "pw" between "User" and "Web App".
+"sqli" applies to all data between "Web App" and "DB".
+"Information Disclosure" applies to all data between "Web App" and "User".
 
 > Security Mitigations
 ======================
@@ -109,7 +99,8 @@ Disprove "Lack of TLS", "Improper Error Handling"
 "inpval" must be implemented on all data between "User" and "Web App".
 "Parameterized Queries" must be implemented on all data between "Web App" and "DB".
 # Maybe the WAF is only good for XSS, and is already in place but we should double-check:
-"Blocking WAF" should be verified on "un" between "User" and "Web App".
+"Blocking WAF" must be verified on "un" between "User" and "Web App".
 # Even less of a requirement; would be nice to see if the WAF works for server-side injection:
 "Learning WAF" may be implemented on "pw" between "User" and "Web App".
+"Error Handling" must be implemented on all data between "User" and "Web App".
 

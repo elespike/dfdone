@@ -4,21 +4,26 @@ import unittest
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 
-from dfdone.cli.main import build_arg_parser, main
+from dfdone.cli.main import build_arg_parser, main, SECTION_BREAK
 from dfdone.tests import constants
 
 
+SECTIONS = constants.TEST_OUTPUT_FILE_PATH.read_text().split(SECTION_BREAK)
 class TestCLI(unittest.TestCase):
     OPTS_OUTPUT = {
-        'assumptions' : constants.EXAMPLE_TML_OUTPUT_HTML_PARTS[0],
-        'data'        : constants.EXAMPLE_TML_OUTPUT_HTML_PARTS[1],
-        'threats'     : constants.EXAMPLE_TML_OUTPUT_HTML_PARTS[2],
-        'measures'    : constants.EXAMPLE_TML_OUTPUT_HTML_PARTS[3],
-        'diagram'     : constants.EXAMPLE_TML_OUTPUT_HTML_PARTS[4],
-        'interactions': constants.EXAMPLE_TML_OUTPUT_HTML_PARTS[5],
+        k: SECTIONS[i]
+        for i, k in enumerate([
+            'data',
+            'diagram',
+            'interactions',
+            'threats',
+            'measures',
+        ])
     }
     PARSER = build_arg_parser(testing=True)
     TEST_MAIN = partial(main, return_html=True)
+
+    maxDiff = None
 
     @staticmethod
     def build_arg_combinations():
@@ -32,9 +37,9 @@ class TestCLI(unittest.TestCase):
         return arg_combinations
 
     def test_defaults(self):
-        args = TestCLI.PARSER.parse_args([constants.EXAMPLE_TML_DATA])
+        args = TestCLI.PARSER.parse_args([constants.EXAMPLE_FILE_PATH.read_text()])
         html = TestCLI.TEST_MAIN(args=args)
-        self.assertEqual(html, constants.EXAMPLE_TML_OUTPUT)
+        self.assertEqual(html, constants.OUTPUT_FILE_PATH.read_text())
 
     def run_incl_excl_tests(self, include_combinations,
                             exclude_combinations, arg):
@@ -49,7 +54,7 @@ class TestCLI(unittest.TestCase):
                     o for o in include_options
                     if o not in exclude_options
                 ]
-                expected_output = '\n\n'.join([
+                expected_output = SECTION_BREAK.join([
                     TestCLI.OPTS_OUTPUT[o]
                     for o in effective_options
                 ]).strip()
@@ -59,11 +64,11 @@ class TestCLI(unittest.TestCase):
                     args.extend(include_options)
                 if arg == '-x':
                     args.extend(exclude_options)
-                args.extend(['--no-css', constants.EXAMPLE_TML_DATA])
+                args.extend(['--no-css', '--no-anchors', constants.EXAMPLE_FILE_PATH.read_text()])
 
                 future = executor.submit(
                     TestCLI.TEST_MAIN,
-                    args=TestCLI.PARSER.parse_args(args)
+                    args=TestCLI.PARSER.parse_args(args),
                 )
                 futures_outputs[future] = expected_output
 
