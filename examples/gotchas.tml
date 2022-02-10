@@ -40,3 +40,5 @@
 # both "un" and "pw", but with risks only to "un":
 "User" sends "un", risking "xss", "DoS"; "pw" to "Web App"
                                        ^
+cmdline: end with --, - for stdin
+when to use \n or <br>

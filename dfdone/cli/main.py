@@ -3,6 +3,7 @@ import logging
 from functools import partial
 from io import StringIO
 from pathlib import Path
+from random import Random, randint
 from sys import stderr, stdout
 
 import argparse
@@ -34,6 +35,13 @@ def build_arg_parser(testing=False):
         'metavar': 'MODEL_FILE',
     }
 
+    a_kwargs = {
+        'action': 'store_true',
+        'help': (
+            'Outputs only components that are part of an interaction.'
+        ),
+    }
+
     c_kwargs = {
         'action': 'store_true',
         'help': (
@@ -41,6 +49,7 @@ def build_arg_parser(testing=False):
             'highlighting every statement that the parser did not understand.\n'
             'If other model files are referenced with the Include directive,\n'
             'outputs the highlighted contents of those files as well.\n'
+            # TODO keep the example files?
             F"{EXAMPLE} \"dfdone -c examples/gotchas.tml\""
         ),
     }
@@ -92,7 +101,7 @@ def build_arg_parser(testing=False):
 
     combine_kwargs = {
         'action': 'store_true',
-        'help': 'Combines arrows with the same source and target.',
+        'help': 'Combines diagram arrows that have the same source, target, and risk rating.',
     }
 
     no_numbers_kwargs = {
@@ -137,7 +146,7 @@ def build_arg_parser(testing=False):
         'metavar': 'FORMAT',
         'help': (
             'Outputs only the diagram in the specified format.\n'
-            'Common supported formats are: dot, jpg, pdf, png, svg.\n'
+            'Common supported formats are: gv, jpg, pdf, png, svg.\n'
             'See the following page for all supported formats:\n'
             'https://www.graphviz.org/doc/info/output.html\n'
             F"{EXAMPLE} \"--diagram png\" outputs only the diagram, in PNG format."
@@ -164,7 +173,7 @@ def build_arg_parser(testing=False):
         'help': (
             'Specifies Graphviz graph attributes to use when building the diagram.\n'
             'See https://graphviz.org/doc/info/attrs.html for supported attributes.\n'
-            F"{EXAMPLE} \"--graph-attrs rankdir=TB bgcolor=lightblue\""
+            F"{EXAMPLE} \"--graph-attrs rankdir=LR bgcolor=LightBlue\""
         ),
     }
 
@@ -194,18 +203,19 @@ def build_arg_parser(testing=False):
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument('model_file', **model_file_kwargs)
+    parser.add_argument('-a', '--active', **a_kwargs)
     parser.add_argument('-c', '--check-file', **c_kwargs)
+    parser.add_argument('-d', '--diagram', **diagram_kwargs)
     parser.add_argument('-i', '--include', **i_kwargs)
-    parser.add_argument('-x', '--exclude', **x_kwargs)
+    parser.add_argument('-s', '--seed', **seed_kwargs)
     parser.add_argument('-v', **v_kwargs)
+    parser.add_argument('-w', '--wrap-labels', **wrap_labels_kwargs)
+    parser.add_argument('-x', '--exclude', **x_kwargs)
     parser.add_argument('--combine', **combine_kwargs)
     parser.add_argument('--no-numbers', **no_numbers_kwargs)
-    parser.add_argument('--wrap-labels', **wrap_labels_kwargs)
     parser.add_argument('--css', **css_kwargs)
     parser.add_argument('--no-css', **no_css_kwargs)
     parser.add_argument('--no-anchors', **no_anchors_kwargs)
-    parser.add_argument('--diagram', **diagram_kwargs)
-    parser.add_argument('--seed', **seed_kwargs)
     parser.add_argument('--graph-attrs', **graph_attrs_kwargs)
     parser.add_argument('--cluster-attrs', **cluster_attrs_kwargs)
     parser.add_argument('--node-attrs', **node_attrs_kwargs)
@@ -227,6 +237,12 @@ def prepare_logger(verbosity):
     main_logger.setLevel(logging.WARNING - verbosity * 10)
 
 
+def remove_inactive(source_dict, interaction_dict):
+    for k in source_dict.keys():
+        if k in source_dict and k not in interaction_dict:
+            del source_dict[k]
+
+
 def remove_dead_anchors(html, remove_all=False):
     soup = BeautifulSoup(html, 'html.parser')
     if remove_all:
@@ -234,10 +250,12 @@ def remove_dead_anchors(html, remove_all=False):
     else:
         tag_ids = [t['id'] for t in soup.find_all(lambda t: t.has_attr('id'))]
     for a in soup.find_all('a'):
-        if a.has_attr('href') and a['href'][1:] not in tag_ids:
-            a.unwrap()
-        if a.has_attr('xlink:href') and a['xlink:href'][1:] not in tag_ids:
-            a.unwrap()
+        for attr_name in ('href', 'xlink:href'):
+            if a.has_attr(attr_name) and a[attr_name][1:] not in tag_ids:
+                # The xlink:title attribute in this tag holds the tooltip.
+                # So instead of deleting the entire tag with a.unwrap(),
+                # only delete the attribute.
+                del a[attr_name]
     return str(soup)
 
 
@@ -254,29 +272,59 @@ def main(args=None, return_html=False):
     if args.check_file:
         return
 
+    if args.active:
+        elements = tml_parser.active_elements
+        data     = tml_parser.active_data
+        threats  = tml_parser.active_threats
+        measures = tml_parser.active_measures
+    else:
+        elements = tml_parser.elements
+        data     = tml_parser.data
+        threats  = tml_parser.threats
+        measures = tml_parser.measures
+
+    clusters = tml_parser.clusters
+    cluster_layouts = ['dot', 'fdp', 'osage', 'patchwork']
+    if args.graph_attrs.get('layout', 'dot') not in cluster_layouts:
+        clusters = dict()
+        for e in elements.values():
+            e.parent = None
+
+    logger = logging.getLogger(__name__)
+    if args.seed is not None:
+        seed = args.seed.lower()
+        if seed == 'random':
+            seed = str(randint(1, 9999))
+        r = Random(seed)
+        logger.info(F"Seed is: {seed}")
+        Parser.sort_clusters(clusters, key=lambda _: r.random())
+        elements = dict(sorted(elements.items(), key=lambda _: r.random()))
+
     diagram_options = {k: getattr(args, k) for k in plot.get_diagram_options()}
     include_information = {
         'data': partial(
             plot.build_data_table,
-            tml_parser.components,
+            data,
         ),
         'diagram': partial(
             plot.build_diagram,
-            tml_parser.components,
+            clusters,
+            elements,
+            tml_parser.interactions,
             options=diagram_options,
         ),
         'interactions': partial(
             plot.build_interaction_table,
-            tml_parser.components,
+            tml_parser.interactions,
             args.combine,
         ),
         'threats': partial(
             plot.build_threat_table,
-            tml_parser.components,
+            threats,
         ),
         'measures': partial(
             plot.build_measure_table,
-            tml_parser.components,
+            measures,
         ),
     }
 
@@ -292,7 +340,9 @@ def main(args=None, return_html=False):
         args.include
     ):
         fn = include_information[info]
-        html_parts.append(fn())
+        part = fn()
+        if part:
+            html_parts.append(part)
     if not args.no_css:
         with args.css.open() as f:
             html_parts.insert(0, F"<style>{f.read()}</style>")

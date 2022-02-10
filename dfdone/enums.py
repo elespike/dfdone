@@ -4,14 +4,14 @@ from enum import Enum, IntEnum, auto, unique
 
 @unique
 class Classification(IntEnum):
-    PUBLIC = -1
-    RESTRICTED = 0
-    CONFIDENTIAL = 1
+    PUBLIC       = -1
+    RESTRICTED   =  0
+    CONFIDENTIAL =  1
 
 
 @unique
 class Role(Enum):
-    AGENT = 'agent'
+    AGENT   = 'agent'
     SERVICE = 'service'
     STORAGE = 'storage'
 
@@ -19,7 +19,7 @@ class Role(Enum):
 @unique
 class Profile(Enum):
     BLACK = 'black'
-    GREY = 'grey'
+    GREY  = 'grey'
     WHITE = 'white'
 
 
@@ -27,37 +27,40 @@ class Profile(Enum):
 class Action(Enum):
     PROCESS = 'process'
     RECEIVE = 'receive'
-    SEND = 'send'
-    STORE = 'store'
+    SEND    = 'send'
+    STORE   = 'store'
 
 
 @unique
 class Impact(IntEnum):
-    LOW = auto()
-    MEDIUM = auto()
-    HIGH = auto()
+    LOW    = 1
+    MEDIUM = 2
+    HIGH   = 3
 
 
 @unique
 class Probability(IntEnum):
-    LOW = auto()
-    MEDIUM = auto()
-    HIGH = auto()
+    LOW    = 1
+    MEDIUM = 2
+    HIGH   = 3
 
 
 @unique
 class Risk(IntEnum):
-    LOW = auto()
-    MEDIUM = auto()
-    HIGH = auto()
+    UNKNOWN  = -1
+    MINIMAL  =  0
+    LOW      =  1
+    MEDIUM   =  2
+    HIGH     =  3
+    CRITICAL =  4
 
 
 @unique
 class Imperative(IntEnum):
-    NONE = auto()
-    MAY = auto()
+    NONE   = auto()
+    MAY    = auto()
     SHOULD = auto()
-    MUST = auto()
+    MUST   = auto()
 
 
 @unique
@@ -65,21 +68,21 @@ class Capability(IntEnum):
     # Detective measures should have a value of 0
     # in order to have zero impact on risk calculations.
     DETECTIVE = 0
-    PARTIAL = auto()
-    FULL = auto()
+    PARTIAL   = 1
+    FULL      = 2
 
 
 @unique
 class Status(IntEnum):
-    PENDING = auto()
+    PENDING     = auto()
     IMPLEMENTED = auto()
-    VERIFIED = auto()
+    VERIFIED    = auto()
 
 
 def get_property(name, source_enum):
     if name == 'gray':
         name = 'grey'
-    for prop in source_enum:
-        if name.upper() == prop.name:
-            return prop
+    name = name.upper()
+    if name in source_enum.__members__:
+        return source_enum[name]
 

@@ -1,0 +1,62 @@
+Elements
+========
+"User"    is a black-box agent.
+"Web App" is a white-box service.
+"DB"      is a white-box storage labeled "Database".
+
+
+Data
+====
+"un" is public data.
+"pw" is confidential data.
+"session cookie" is restricted data.
+
+"creds" are "un", "pw".
+
+
+Interactions
+============
+1. "User"    sends "creds" to "Web App".
+2. "Web App" sends "creds" to "DB".
+
+3. "User" receives "session cookie" from "Web App".
+
+
+Threats
+=======
+Include "examples/sample_threats.tml".
+
+
+Risks
+=====
+"Plaintext Transport" applies between all elements.
+
+"xss"  applies to "un"     between "User"    and "Web App".
+"cmdi" applies to "pw"     between "User"    and "Web App".
+"sqli" applies to all data between "Web App" and "DB".
+
+
+Measures
+========
+"TLS" is a full measure against "Plaintext Transport".
+
+"inpval" is  a full measure against "injection" labeled "Input Validation"
+    described as "<a href=""https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html"">Click for more info</a>".
+"params" are a full measure against "sqli" labeled "Parameterized Queries".
+
+"Blocking WAF" is a partial   measure against "injection" described as "WAF in blocking mode".
+"Learning WAF" is a detective measure against "injection" described as "WAF in learning mode".
+
+
+Mitigations
+===========
+"TLS" must be verified between all elements.
+
+"inpval" must be implemented on all data between "User" and "Web App".
+"params" must be implemented on all data between "Web App" and "DB".
+
+# Maybe the WAF is only good for XSS, which applies only on username, and is already in place but we should double-check:
+"Blocking WAF" must be verified on "un" between "User" and "Web App".
+
+# Would be nice to see if the WAF works for server-side injection attacks via password parameters:
+"Learning WAF" may be implemented on "pw" between "User" and "Web App".

@@ -3,7 +3,7 @@ import unittest
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from itertools import product
 
-from dfdone.tml.grammar import constructs
+from dfdone.tml.grammar import directives
 from pyparsing import ParseException
 
 # Shared syntax
@@ -43,7 +43,7 @@ THREAT_LITERALS = ['threat']
 CAPABILITY  = ['full', 'partial', 'detective']
 MEASURE_LITERALS = [F"{p[0]} {p[1]}" for p in product(
     ['', 'security'],
-    ['measure', 'mitigation', 'control'],
+    ['measure', 'control'],
 )]
 AGAINST = ['against']
 
@@ -62,9 +62,9 @@ class TestGrammar(unittest.TestCase):
                 print(exc.explain(depth=0))
             yield is_exception
 
-    def run_tests(self, construct, tests, concurrent=False):
+    def run_tests(self, directive, tests, concurrent=False):
         if not concurrent:
-            construct.run_tests(
+            directive.run_tests(
                 tests,
                 print_results=False
             )
@@ -75,7 +75,7 @@ class TestGrammar(unittest.TestCase):
             split_tests = [tests[i::max_workers] for i in range(max_workers)]
             for _tests in split_tests:
                 future = executor.submit(
-                    construct.run_tests,
+                    directive.run_tests,
                     _tests,
                     print_results=False,
                 )
@@ -94,7 +94,7 @@ class TestGrammar(unittest.TestCase):
             ['"file.tml"', '"relative/file.tml"', '"/full/path/to/file.tml"'],
         ]
         self.run_tests(
-            constructs['inclusion'],
+            directives['inclusion'],
             [' '.join(p) for p in product(*inclusion_components)],
         )
 
@@ -109,7 +109,7 @@ class TestGrammar(unittest.TestCase):
             LABEL_AND_OR_DESCRIPTION,
         ]
         self.run_tests(
-            constructs['element'],
+            directives['element'],
             [' '.join(p) for p in product(*element_components)],
         )
 
@@ -123,7 +123,7 @@ class TestGrammar(unittest.TestCase):
             LABEL_AND_OR_DESCRIPTION,
         ]
         self.run_tests(
-            constructs['datum'],
+            directives['datum'],
             [' '.join(p) for p in product(*datum_components)],
         )
 
@@ -137,7 +137,7 @@ class TestGrammar(unittest.TestCase):
             LABEL_AND_OR_DESCRIPTION,
         ]
         self.run_tests(
-            constructs['threat'],
+            directives['threat'],
             [' '.join(p) for p in product(*threat_components)],
         )
 
@@ -153,7 +153,7 @@ class TestGrammar(unittest.TestCase):
             LABEL_AND_OR_DESCRIPTION,
         ]
         self.run_tests(
-            constructs['measure'],
+            directives['measure'],
             [' '.join(p) for p in product(*measure_components)],
             concurrent=True
         )
@@ -166,7 +166,7 @@ class TestGrammar(unittest.TestCase):
             LABEL_LIST,
         ]
         self.run_tests(
-            constructs['alias'],
+            directives['alias'],
             [' '.join(p) for p in product(*alias_components)],
         )
 
@@ -238,7 +238,7 @@ class TestGrammar(unittest.TestCase):
         )
 
         self.run_tests(
-            constructs['modification'],
+            directives['modification'],
             modification_tests,
         )
 
@@ -270,7 +270,7 @@ class TestGrammar(unittest.TestCase):
         for case, values in alternate_cases.items():
             interaction_components.update(values)
             self.run_tests(
-                constructs['interaction'],
+                directives['interaction'],
                 [' '.join(p) for p in product(*interaction_components.values())],
             )
 
@@ -294,7 +294,7 @@ class TestGrammar(unittest.TestCase):
              'within "DB",\n\tand between "User" and "Web"'],
         ]
         self.run_tests(
-            constructs['mitigation'],
+            directives['mitigation'],
             [' '.join(p) for p in product(*mitigation_components)],
             concurrent=True
         )

@@ -21,8 +21,8 @@ th {
 td a {
   color: inherit;
 }
-tbody:target, tr:target {
-  background-color: #ffe34c;
+tbody:target, tr:target, tr:hover {
+  background-color: #FFD70060;
 }
 
 #diagram {
@@ -43,7 +43,7 @@ tbody:target, tr:target {
 }
 
 .status {
-  background-color: rgba(var(--inset-color), 0.333);
+  background-color: rgba(var(--inset-color), 0.25);
   box-shadow: 0px 0px 0px 2px inset rgb(var(--inset-color));
   display: inline-block;
   margin: 2px 0px;
@@ -55,12 +55,12 @@ tbody:target, tr:target {
   --inset-color: 0, 0, 0;
 }
 .threat-status {
-  /* Tomato */
-  --inset-color: 255, 99, 71;
+  /* Crimson */
+  --inset-color: 220, 20, 60;
 }
 .risk-status {
-  /* Tomato */
-  --inset-color: 255, 99, 71;
+  /* Crimson */
+  --inset-color: 220, 20, 60;
 }
 .measure-status {
   /* LimeGreen */
@@ -103,12 +103,18 @@ tbody:target, tr:target {
   background-color: rgb(var(--inset-color));
 }
 
+.risk-minimal {
+}
 .risk-low {
+  background-image: repeating-linear-gradient(45deg, rgb(var(--inset-color)), rgb(var(--inset-color))calc(100%/3), Transparent calc(100%/3), Transparent 100%);
 }
 .risk-medium {
   background-image: repeating-linear-gradient(45deg, rgb(var(--inset-color)), rgb(var(--inset-color))50%, Transparent 50%, Transparent 100%);
 }
 .risk-high {
+  background-image: repeating-linear-gradient(45deg, rgb(var(--inset-color)), rgb(var(--inset-color))calc(200%/3), Transparent calc(200%/3), Transparent 100%);
+}
+.risk-critical {
   background-color: rgb(var(--inset-color));
 }
 
@@ -133,19 +139,23 @@ tbody:target, tr:target {
 }
 
 .status-pending {
-  box-shadow: 0px 0px 0px 2px inset Tomato;
+  box-shadow: 0px 0px 0px 2px inset Crimson;
 }
 .status-implemented {
-  box-shadow: 0px 0px 0px 2px inset Gold;
+  box-shadow: 0px 0px 0px 2px inset Orange;
 }
 .status-verified {
 }
 
 .dash {
-  text-align: center;
+  display: flex;
+  justify-content: center;
 }
 
 .edge:hover polygon, .edge:target polygon {
+  stroke-width: 6px;
+}
+.edge:hover ellipse, .edge:target ellipse {
   stroke-width: 6px;
 }
 .edge:hover path, .edge:target path {

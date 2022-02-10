@@ -1,24 +1,7 @@
-# Threats can be high/medium/low impact/severity,
-#   and high/medium/low probability/likelihood.
+"Plaintext Transport" is a high-impact, low-probability threat
 
-"Lack of TLS" is a high impact, high probability threat
-"Improper Error Handling" is a medium impact, medium probability threat
+"xss"  is a high impact, high probability threat labeled "Cross-Site Scripting"
+"sqli" is a high impact, high probability threat labeled "SQL Injection"
+"cmdi" is a high impact, high probability threat labeled "Command Injection"
 
-"Cross-Site Scripting" is a high impact, high probability threat
-# Optional alias, has no effect on the diagram;
-#   it simply allows for shortcuts in this file,
-#   or in other files that have included this file.
-"xss" is "Cross-Site Scripting"
-
-"Database Injection" is a high impact, high probability threat
-# Alias
-"sqli" is "Database Injection"
-
-"Command Injection" is a high impact, high probability threat
-# Alias
-"cmdi" is "Command Injection"
-
-# Group alias
 "injection" is "xss", "sqli", "cmdi"
-
-"Information Disclosure" is a high impact, low probability threat
