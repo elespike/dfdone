@@ -172,7 +172,7 @@ def place_clusters(graph, clusters, elements, interactions, options):
             if e.parent is cluster:
                 add_node(cluster_graph, e, interactions, options)
                 c_labels.append(e.label)
-        tooltip = F"{cluster}\n- " + '\n- '.join(c_labels)
+        tooltip = F"{cluster}\\n- " + '\\n- '.join(c_labels)
         cluster_graph.attr(tooltip=tooltip)
         graph.subgraph(cluster_graph)
 
@@ -236,7 +236,7 @@ def get_tooltip(interaction_index, interaction):
     # Assumes data is already sorted by descending classification.
     data_labels = [F"\t- {d.label}" for d in interaction.data.values()]
     tooltip = F"{interaction_index + 1}\t{str(interaction)}"
-    tooltip = tooltip.replace('\n', ' ') + '\n' + '\n'.join(data_labels)
+    tooltip = tooltip.replace('\n', ' ') + '\\n' + '\\n'.join(data_labels)
     return tooltip
 
 # TODO table for elements, add source/target in interactions table
@@ -276,7 +276,7 @@ def build_diagram(clusters, elements, interactions, options=dict(), fmt=None):
             attributes['class'] = F"risk-{max_risk.name.lower()}"
             skip.extend(selected_interactions)
 
-        tooltip = '\n'.join(get_tooltip(i, si) for i, si in selected_interactions)
+        tooltip = '\\n'.join(get_tooltip(i, si) for i, si in selected_interactions)
         attributes['edgetooltip'] = tooltip
         if not options['no_numbers']:
             attributes.update({
@@ -387,7 +387,7 @@ def add_node(graph, element, interactions, options):
     attributes['label'] = element.label
     wrap_width = options['wrap_labels']
     if wrap_width is not None:
-        attributes['label'] = '\n'.join(
+        attributes['label'] = '\\n'.join(
             wrap(attributes['label'], width=wrap_width)
         )
 
@@ -406,8 +406,8 @@ def add_node(graph, element, interactions, options):
         if element.name in interaction.sources | interaction.targets:
             element_interactions.append((index, interaction))
     if element_interactions:
-        attributes['tooltip'] += '\n'
-        attributes['tooltip'] += '\n'.join(
+        attributes['tooltip'] += '\\n'
+        attributes['tooltip'] += '\\n'.join(
             get_tooltip(index, interaction)
             for index, interaction in element_interactions
         )
@@ -420,7 +420,7 @@ def add_node(graph, element, interactions, options):
         'class': 'element-container',
         'label': '',
         'margin': options['cluster_attrs']['margin'],
-        'rank': 'same',
+        'rank': 'same',  # only has an effect with newrank=true
         'style': 'invis',
     }
     container = Digraph(name=container_name)

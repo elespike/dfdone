@@ -460,7 +460,9 @@ class Parser:
                         component.level = parent.level + 1
                         for child in component.children.values():
                             child.level = component.level + 1
-                        if component.parent is not None:
+                        if component.parent is None:
+                            del self.clusters[component.name]
+                        else:
                             del component.parent.children[component.name]
                         parent.children[component.name] = component
                     if isinstance(component, Element):
