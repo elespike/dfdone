@@ -13,6 +13,7 @@ from dfdone.components import (
     Interaction,
     Measure,
     Mitigation,
+    Note,
     Risk,
     Threat,
 )
@@ -44,6 +45,7 @@ class Parser:
             self.included_files.add(Path(model_file.name).resolve())
 
         self.aliases  = dict()
+        self.notes    = dict()
         self.clusters = dict()
         self.elements = dict()
         self.data     = dict()
@@ -57,6 +59,8 @@ class Parser:
         self.active_measures = dict()
 
         self.exercise_directives(self.parse())
+
+        self.structure_notes()
 
         Parser.sort_clusters(self.clusters)
         self.elements = dict(sorted(self.elements.items(), key=itemgetter(1)))
@@ -123,6 +127,7 @@ class Parser:
     @property
     def components(self):
         return {n: c for n, c in chain(
+            self.notes   .items(),
             self.clusters.items(),
             self.elements.items(),
             self.data    .items(),
@@ -274,6 +279,8 @@ class Parser:
         False
         """
 
+        if parsed_result.note:
+            self.build_note(parsed_result)
         if parsed_result.cluster:
             self.build_cluster(parsed_result)
         elif parsed_result.role:
@@ -284,6 +291,26 @@ class Parser:
             self.build_threat(parsed_result)
         elif parsed_result.capability:
             self.build_measure(parsed_result)
+
+    def compile_note_targets(self, parsed_result):
+        target_names = set()
+        for r in parsed_result.target_list:
+            if r.name in self.aliases:
+                target_names |= self.aliases[r.name]
+            else:
+                target_names.add(r.name)
+        return target_names
+
+    def build_note(self, parsed_result):
+        note = Note(
+            parsed_result.name,
+            parsed_result.label,
+            parsed_result.color,
+            parsed_result.parent,
+            self.compile_note_targets(parsed_result),
+            parsed_result.description
+        )
+        self.notes[parsed_result.name] = note
 
     def build_cluster(self, parsed_result):
         level = 1
@@ -429,6 +456,23 @@ class Parser:
         # Don't use 'elif' here because multiple attributes
         # from the component may be modified in a single call.
 
+        if parsed_result.color:
+            if hasattr(component, 'color'):
+                component.color = parsed_result.color
+            else:
+                self.logger.warning(Parser.invalid_modification_warning(
+                    component.name, parsed_result, 'color', 'Note'))
+
+        # target_list is currently used for Notes as well as Interactions,
+        # but Interactions have no defined modification directives,
+        # so this will only work with Notes.
+        if parsed_result.target_list:
+            if hasattr(component, 'targets'):
+                component.targets = self.compile_note_targets(parsed_result)
+            else:
+                self.logger.warning(Parser.invalid_modification_warning(
+                    component.name, parsed_result, 'targets', 'Note'))
+
         if parsed_result.profile:
             if hasattr(component, 'profile'):
                 component.profile = get_property(
@@ -457,6 +501,7 @@ class Parser:
                     self.logger.warning(f'TODO cluster {parsed_result.parent} not found or previously defined')
                 else:
                     if isinstance(component, Cluster):
+                        # Update the level and remove it from the previous parent's children
                         component.level = parent.level + 1
                         for child in component.children.values():
                             child.level = component.level + 1
@@ -568,6 +613,8 @@ class Parser:
             return
 
         notes = parsed_result.notes
+        if notes in self.notes:
+            notes = self.notes[notes].description
         self.interactions.append(
             Interaction(action, sources, targets, data, risks, mitigations, notes)
         )
@@ -678,4 +725,17 @@ class Parser:
             elif parsed_result.verified:
                 status = Status.VERIFIED
         return (imperative, status)
+
+    def structure_notes(self):
+        for note in self.notes.values():
+            note.targets = {
+                self.elements[t].name: self.elements[t]
+                for t in note.targets if t in self.elements
+            }
+            if note.parent:
+                note.parent = Parser.find_cluster(note.parent, self.clusters)
+            elif note.targets:
+                note.parent = max(e.parent for e in note.targets.values())
+            else:
+                note.parent = None
 

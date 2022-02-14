@@ -147,7 +147,7 @@ def build_measure_table(measures):
         build_table_rows(MEASURE, measures)
     )
 
-def place_clusters(graph, clusters, elements, interactions, options):
+def place_clusters(graph, clusters, elements, notes, interactions, options):
     for c_name, cluster in clusters.items():
         cid = id_format(c_name)
         attributes = {
@@ -166,12 +166,16 @@ def place_clusters(graph, clusters, elements, interactions, options):
             c_labels.append(child.label)
             place_clusters(
                 cluster_graph, {child_name: child},
-                elements, interactions, options
+                elements, notes, interactions, options
             )
         for e in elements.values():
             if e.parent is cluster:
-                add_node(cluster_graph, e, interactions, options)
+                add_element(cluster_graph, e, interactions, options)
                 c_labels.append(e.label)
+        for n in notes.values():
+            if n.parent is cluster:
+                add_note(cluster_graph, n)
+
         tooltip = F"{cluster}\\n- " + '\\n- '.join(c_labels)
         cluster_graph.attr(tooltip=tooltip)
         graph.subgraph(cluster_graph)
@@ -239,8 +243,8 @@ def get_tooltip(interaction_index, interaction):
     tooltip = tooltip.replace('\n', ' ') + '\\n' + '\\n'.join(data_labels)
     return tooltip
 
-# TODO table for elements, add source/target in interactions table
-def build_diagram(clusters, elements, interactions, options=dict(), fmt=None):
+
+def build_diagram(clusters, elements, notes, interactions, options=dict(), fmt=None):
     options = get_diagram_options(merge_options=options)
 
     dot = Digraph()
@@ -248,12 +252,15 @@ def build_diagram(clusters, elements, interactions, options=dict(), fmt=None):
     dot.node_attr  = options['node_attrs' ]
     dot.edge_attr  = options['edge_attrs' ]
 
-    place_clusters(dot, clusters, elements, interactions, options)
+    place_clusters(dot, clusters, elements, notes, interactions, options)
     for e in elements.values():
-        if e.parent is not None:
-            # Already placed in its cluster.
-            continue
-        add_node(dot, e, interactions, options)
+        if e.parent is None:
+            add_element(dot, e, interactions, options)
+    for n_name, n in notes.items():
+        if n.parent is None:
+            add_note(dot, n)
+        for e_name, e in n.targets.items():
+            dot.edge(n_name, e_name, style='dotted', dir='none')
 
     skip = list()
     attributes = dict()
@@ -364,7 +371,7 @@ def get_storage_shape(color, label):
 
 
 # TODO expose more options?
-def add_node(graph, element, interactions, options):
+def add_element(graph, element, interactions, options):
     eid = id_format(element.name)
     attributes = {
         'id': eid,
@@ -372,9 +379,9 @@ def add_node(graph, element, interactions, options):
     }
     # Role defines node shape
     attributes['shape'], attributes['margin'] = {
-        Role.AGENT  : ('box' , '0.10,0.15'),
-        Role.SERVICE: ('oval', '0.00,0.15'),
-        Role.STORAGE: ('none', '0.00,0.00'),
+        Role.AGENT  : ('box'  , '0.10,0.15'),
+        Role.SERVICE: ('oval' , '0.00,0.15'),
+        Role.STORAGE: ('plain', '0.00,0.00'),
     }.get(element.role)
 
     # Set proper background + text contrast
@@ -431,6 +438,45 @@ def add_node(graph, element, interactions, options):
             container.node(F"{eid}_companion", shape='point', style='invis', label='')
             break
     graph.subgraph(container)
+
+
+def get_note_shape(note):
+    color = {
+        'blue'  : ('skyblue', 1),
+        'green' : ('springgreen', 1),
+        'pink'  : ('plum', 1),
+        'purple': ('mediumpurple', 1),
+        'red'   : ('coral', 1),
+        'yellow': ('gold', 1),
+    }.get(note.color, ('snow', 1))
+
+    label = note.label.replace('\n', '<br/>')
+    title = F'<tr><td bgcolor="{color[0]}{color[1] + 1}"><b>{label}</b></td></tr>'
+    body = ''
+    if note.description:
+        description = note.description.replace('\n', '<br/>')
+        body = F'<tr><td bgcolor="{color[0]}{color[1]}">{description}</td></tr>'
+    return (
+        '<<table border="0" cellspacing="0">'
+        + title
+        + body
+        + '</table>>'
+    )
+
+
+def add_note(graph, note):
+    name = id_format(note.name)
+    attributes = {
+        'id': name,
+        'class': F"note note-{note.color}",
+        'fillcolor': 'transparent',
+        'margin': '0',
+        'fontname': '',  # reset to default
+        'label': get_note_shape(note),
+        'shape': 'plain',
+        'tooltip': ' ',
+    }
+    graph.node(name, _attributes=attributes)
 
 
 def build_risks_cell(risks, mitigations, rowspan=1):

@@ -287,8 +287,8 @@ def main(args=None, return_html=False):
     cluster_layouts = ['dot', 'fdp', 'osage', 'patchwork']
     if args.graph_attrs.get('layout', 'dot') not in cluster_layouts:
         clusters = dict()
-        for e in elements.values():
-            e.parent = None
+        for c in (elements | tml_parser.notes).values():
+            c.parent = None
 
     logger = logging.getLogger(__name__)
     if args.seed is not None:
@@ -310,6 +310,7 @@ def main(args=None, return_html=False):
             plot.build_diagram,
             clusters,
             elements,
+            tml_parser.notes,
             tml_parser.interactions,
             options=diagram_options,
         ),

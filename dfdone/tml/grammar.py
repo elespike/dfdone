@@ -1,3 +1,5 @@
+# TODO split into individual files
+
 from itertools import combinations
 from re import IGNORECASE
 from string import whitespace
@@ -38,12 +40,13 @@ DELIMITERS = Or((',', ';'))
 AGAINST      = CaselessKeyword('against'     )
 ALL_DATA     = CaselessKeyword('all data'    ) + Opt(DELIMITERS)
 AND          = CaselessKeyword('and'         )
+ATTACHED_TO  = CaselessKeyword('attached to' )
 BETWEEN      = CaselessKeyword('between'     )
 DESCRIBED_AS = CaselessKeyword('described as')
-IN           = CaselessKeyword('in'          )
-TO           = CaselessKeyword('to'          )
 FROM         = CaselessKeyword('from'        )
+IN           = CaselessKeyword('in'          )
 INCLUDE      = CaselessKeyword('include'     )
+TO           = CaselessKeyword('to'          )
 WITHIN       = CaselessKeyword('within'      )
 
 PROCESS = Regex('(process)(es)?', IGNORECASE).sub('\g<1>').set_results_name('action')
@@ -178,6 +181,19 @@ VERIFIED = Or(CaselessKeyword(w) for w in [
     'checked',
 ]).set_results_name('verified')
 
+NOTE = Or(CaselessKeyword(w) for w in [
+    'note',
+    'notes',
+]).set_results_name('note')
+COLOR = Or(CaselessKeyword(w) for w in [
+    'blue',
+    'green',
+    'pink',
+    'purple',
+    'red',
+    'yellow',
+]).set_results_name('color')
+
 WITH_NOTES = Or([
     Regex('(with )?notes?' , IGNORECASE),
     Regex('not(e|ing) that', IGNORECASE),
@@ -250,8 +266,11 @@ LABEL_AND_OR_DESCRIPTION = MatchFirst([
 directives = [
     # Parse additional files
     INCLUDE + PATH,
-    # Alias for one or more components,
+    # Alias for one or more components
     ALIAS_DIRECTIVE,
+    # Diagram note
+    NAME_LIST + IS_A + Opt(COLOR) + NOTE + Opt(IN + PARENT) + Opt(ATTACHED_TO + TARGET_LIST)
+    + Opt(AND) + Opt(LABEL_AND_OR_DESCRIPTION),
     # Cluster
     NAME_LIST + IS_A + CLUSTER + Opt(IN + PARENT)
     + Opt(LABEL_AND_OR_DESCRIPTION),
@@ -272,6 +291,7 @@ directives = [
     NAME_LIST + IS_NOW_A + MatchFirst([
         LABEL_AND_OR_DESCRIPTION,
         MatchFirst([
+            Or(all_combinations([COLOR, NOTE, IN + PARENT, ATTACHED_TO + TARGET_LIST])),
             Or(all_combinations([PROFILE, ROLE, IN + PARENT])),
             CLASSIFICATION + Opt(DATUM),
             Or(all_combinations([IMPACT, PROBABILITY])) + Opt(THREAT),
@@ -303,6 +323,7 @@ directives = [line_start + c + Opt('.') for c in list(directives)]
 directive_keys = [
     'inclusion'   ,
     'alias'       ,
+    'note'        ,
     'cluster'     ,
     'element'     ,
     'datum'       ,

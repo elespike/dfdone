@@ -4,7 +4,6 @@ from dfdone.enums import (
     Status,
 )
 
-# TODO notes as a component -_- within cluster, or with a dotted/dashed edge to one or more elements
 
 class Component:
     def __init__(self, name, label, description, aliases=set()):
@@ -41,6 +40,14 @@ class Component:
         return self < other or self == other
 
 
+class Note(Component):
+    def __init__(self, name, label, color, parent, targets, description):
+        super().__init__(name, label, description)
+        self.color = color
+        self.parent = parent
+        self.targets = targets
+
+
 class Cluster(Component):
     def __init__(self, name, label, level, parent, children, description):
         super().__init__(name, label, description)
@@ -54,6 +61,14 @@ class Cluster(Component):
         return (
             (self.label, self.description, self.parent, self.children)
             == (other.label, other.description, other.parent, other.children)
+        )
+
+    def __lt__(self, other):
+        if not isinstance(other, Cluster):
+            return NotImplemented
+        return (
+            (self.level, self.label, self.description)
+            < (other.level, other.label, other.description)
         )
 
 
