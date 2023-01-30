@@ -2,9 +2,9 @@
 # graph-attrs rankdir, newrank=true, clusterrank=none/global to remove clusters
 # cluster-attrs margin for nice scaling with the containers
 # edge-attrs minlen
+# different layouts, pack for osage
 # seed if all fails
 
-# TODO move functions
 from itertools import product
 from logging import getLogger
 from string import punctuation
@@ -205,15 +205,15 @@ def get_diagram_options(merge_options=dict()):
             'fillcolor': 'Crimson',  # for visibility when something goes wrong
             'fontname': 'Monospace',
             'fontsize': '14',
-            'style': 'filled',
         },
         'edge_attrs': {
-            'arrowhead': 'normal',
             'arrowsize': '0.8',
             'labelangle': '12',
             'labeldistance': '2',
             'labelfontname': 'Monospace',
             'labelfontsize': '8',
+            'len': '2',
+            'minlen': '2',
         },
     }
     options['graph_attrs'  ].update(merge_options.pop('graph_attrs'  , {}))
@@ -227,12 +227,7 @@ def get_diagram_options(merge_options=dict()):
 def find_parallel(interaction, interactions):
     return [
         (index, other) for index, other in enumerate(interactions)
-        if (
-            interaction.sources | interaction.targets
-            == other.sources | other.targets
-            and
-            interaction.highest_risk == other.highest_risk
-        )
+        if interaction.sources | interaction.targets == other.sources | other.targets
     ]
 
 
@@ -260,7 +255,7 @@ def build_diagram(clusters, elements, notes, interactions, options=dict(), fmt=N
         if n.parent is None:
             add_note(dot, n)
         for e_name, e in n.targets.items():
-            dot.edge(n_name, e_name, style='dotted', dir='none')
+            dot.edge(e_name, n_name, style='dashed', dir='none')
 
     skip = list()
     attributes = dict()
@@ -272,7 +267,7 @@ def build_diagram(clusters, elements, notes, interactions, options=dict(), fmt=N
         attributes = {
             'id': F"edge-{index + 1}",
             'class': F"risk-{max_risk.name.lower()}",
-            'arrowhead': options['edge_attrs']['arrowhead'],
+            'dir': 'forward',
             'URL': F"#interaction-{index + 1}",
         }
 
@@ -303,38 +298,34 @@ def build_diagram(clusters, elements, notes, interactions, options=dict(), fmt=N
                 }.get(max_risk)
             })
 
-        if interaction.action in (Action.PROCESS, Action.STORE):
-            arrow_shape = {
-                Action.PROCESS: 'dot',
-                Action.STORE  : 'box',
-            }.get(interaction.action)
-            if attributes['arrowhead'] == 'empty':
-                arrow_shape = 'o' + arrow_shape
-            attributes['arrowhead'] = arrow_shape
-
-        if max_risk is Risk.CRITICAL:
-            attributes['arrowhead'] += 'icurve'
-
-        if len(selected_interactions) > 1:
+        attributes['arrowhead'] = options['edge_attrs'].get('arrowhead', 'normal')
+        attributes['arrowtail'] = 'none'  # not allowing arrowtail customization
+        if 'arrowhead' not in options['edge_attrs']:
+            attributes['arrowhead'] = {
+                Risk.UNKNOWN : 'o' + attributes['arrowhead'],
+                Risk.MINIMAL : 'none'*3 + 'o' + attributes['arrowhead'],
+                Risk.LOW     : 'none'*3 + attributes['arrowhead'],
+                Risk.MEDIUM  : 'none'*2 + attributes['arrowhead'],
+                Risk.HIGH    : 'none'*1 + attributes['arrowhead'],
+                Risk.CRITICAL: 'none'*0 + attributes['arrowhead'],
+            }.get(max_risk)
+        if set(i.action for _, i in selected_interactions) == set(Action):
             attributes['dir'] = 'both'
+            attributes['arrowtail'] = attributes['arrowhead']
         elif interaction.action is Action.RECEIVE:
             attributes['dir'] = 'back'
+            attributes['arrowtail'] = attributes.pop('arrowhead')
+        if attributes['dir'] != 'forward':
             if 'taillabel' in attributes:
                 attributes['headlabel'] = attributes.pop('taillabel')
             if 'tailtooltip' in attributes:
                 attributes['headtooltip'] = attributes.pop('tailtooltip')
-            attributes['arrowtail'] = attributes.pop('arrowhead')
 
         for source, target in product(
             interaction.sources.values(),
             interaction.targets.values()
         ):
             target_name = target.name
-            if interaction.action in (Action.PROCESS, Action.STORE):
-                target_name = F"{id_format(target_name)}_companion"
-                attributes['arrowsize'] = '1.2'
-                # TODO keep?
-                attributes['minlen'] = attributes['len'] = '1'
             dot.edge(
                 source.name,
                 target_name,
@@ -358,7 +349,7 @@ def get_storage_shape(color, label):
     row = '<tr><td bgcolor="{}" color="{}" cellpadding="{}">{}</td></tr>'
     stripe_row  = row.format("Black", "Black", 2, ''                          )
     spacing_row = row.format("White", "White", 0, ''                          )
-    label_row   = row.format(color  , color  , 8, label.replace('\n', '<br/>'))
+    label_row   = row.format(color  , color  , 8, label.replace('\\n', '<br/>'))
     return (
         '<<table border="0" cellborder="1" cellspacing="0">'
         + stripe_row
@@ -370,19 +361,21 @@ def get_storage_shape(color, label):
     )
 
 
-# TODO expose more options?
 def add_element(graph, element, interactions, options):
     eid = id_format(element.name)
     attributes = {
         'id': eid,
         'class': F"profile-{element.profile.value} role-{element.role.value}",
+        'style': 'filled',
     }
     # Role defines node shape
     attributes['shape'], attributes['margin'] = {
         Role.AGENT  : ('box'  , '0.10,0.15'),
-        Role.SERVICE: ('oval' , '0.00,0.15'),
+        Role.SERVICE: ('box'  , '0.10,0.15'),
         Role.STORAGE: ('plain', '0.00,0.00'),
     }.get(element.role)
+    if element.role is Role.SERVICE:
+        attributes['style'] += ',rounded'
 
     # Set proper background + text contrast
     attributes['fillcolor'], attributes['fontcolor'] = {
@@ -419,8 +412,7 @@ def add_element(graph, element, interactions, options):
             for index, interaction in element_interactions
         )
 
-    # These invisible clusters help organize the graph, hosting each element
-    # and the invisible nodes used for the PROCESS and STORE Actions.
+    # These invisible clusters help organize the graph, hosting each element.
     container_name = F"cluster_{eid}"
     container_attrs = {
         'id': F"{eid}_container",
@@ -433,10 +425,6 @@ def add_element(graph, element, interactions, options):
     container = Digraph(name=container_name)
     container.attr(_attributes=container_attrs)
     container.node(element.name, _attributes=attributes)
-    for _, i in element_interactions:
-        if i.action in (Action.PROCESS, Action.STORE):
-            container.node(F"{eid}_companion", shape='point', style='invis', label='')
-            break
     graph.subgraph(container)
 
 
@@ -446,12 +434,12 @@ def get_note_shape(note):
         'green' : ('springgreen', 1),
         'pink'  : ('plum', 1),
         'purple': ('mediumpurple', 1),
-        'red'   : ('coral', 1),
+        'red'   : ('tomato', 1),
         'yellow': ('gold', 1),
-    }.get(note.color, ('snow', 1))
+    }.get(note.color, ('honeydew', 2))
 
     label = note.label.replace('\n', '<br/>')
-    title = F'<tr><td bgcolor="{color[0]}{color[1] + 1}"><b>{label}</b></td></tr>'
+    title = F'<tr><td bgcolor="{color[0]}{min(3, color[1] + 2)}"><b>{label}</b></td></tr>'
     body = ''
     if note.description:
         description = note.description.replace('\n', '<br/>')
@@ -476,7 +464,7 @@ def add_note(graph, note):
         'shape': 'plain',
         'tooltip': ' ',
     }
-    graph.node(name, _attributes=attributes)
+    graph.node(note.name, _attributes=attributes)
 
 
 def build_risks_cell(risks, mitigations, rowspan=1):
@@ -510,10 +498,17 @@ def build_interaction_rows(i_index, interaction):
     for datum_name, risk_dict in interaction.risks.items():
         for r_name, risk in risk_dict.items():
             if interaction.entirely_affected_by(r_name):
-                # Using setdefault() will set the highest risk
-                # and skip risks of the same threat but lower data classification.
-                # Assumes risk is already sorted by descending rating.
-                interaction_risks.setdefault(r_name, risk)
+                # Also verify that relevant mitigations apply to the entire interaction.
+                if all(
+                    interaction.entirely_mitigated_by(m_name)
+                    for m_dict in interaction.mitigations.values()
+                    for m_name in m_dict
+                    if m_name in risk.threat.applicable_measures
+                ):
+                    # Using setdefault() will set the highest risk
+                    # and skip risks of the same threat but lower data classification.
+                    # Assumes risk is already sorted by descending rating.
+                    interaction_risks.setdefault(r_name, risk)
             else:
                 data_risks[datum_name] = risk_dict
 

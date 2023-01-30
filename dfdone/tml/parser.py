@@ -60,8 +60,9 @@ class Parser:
 
         self.exercise_directives(self.parse())
 
-        self.structure_notes()
+        self.reparent_notes()
 
+        # TODO does cluster sorting make a difference?
         Parser.sort_clusters(self.clusters)
         self.elements = dict(sorted(self.elements.items(), key=itemgetter(1)))
         self.data     = dict(sorted(self.data    .items(), key=itemgetter(1)))
@@ -180,7 +181,11 @@ class Parser:
                 components.update(
                     self.compile_components(self.aliases[name], source_dict)
                 )
+            elif (cluster := Parser.find_cluster(name, self.clusters)) is not None:
+                components[name] = cluster
             else:
+                self.logger.debug(F"{name_list=}")
+                self.logger.debug(F"{source_dict=}")
                 self.logger.warning(
                     F'"{name}" has been declared incorrectly, or not at all!'
                 )
@@ -292,22 +297,13 @@ class Parser:
         elif parsed_result.capability:
             self.build_measure(parsed_result)
 
-    def compile_note_targets(self, parsed_result):
-        target_names = set()
-        for r in parsed_result.target_list:
-            if r.name in self.aliases:
-                target_names |= self.aliases[r.name]
-            else:
-                target_names.add(r.name)
-        return target_names
-
     def build_note(self, parsed_result):
         note = Note(
             parsed_result.name,
             parsed_result.label,
             parsed_result.color,
             parsed_result.parent,
-            self.compile_note_targets(parsed_result),
+            self.compile_components(parsed_result.target_list, self.elements),
             parsed_result.description
         )
         self.notes[parsed_result.name] = note
@@ -414,10 +410,12 @@ class Parser:
             else:
                 target_cluster = Parser.find_cluster(
                     cluster_name, cluster.children)
-        return target_cluster
+                if target_cluster is not None:
+                    return target_cluster
 
     @staticmethod
     def sort_clusters(cluster_dict, key=itemgetter(1)):
+        # TODO the top cluster_dict isn't being sorted
         for cluster in cluster_dict.values():
             cluster.children = dict(sorted(cluster.children.items(), key=key))
             Parser.sort_clusters(cluster.children)
@@ -468,7 +466,10 @@ class Parser:
         # so this will only work with Notes.
         if parsed_result.target_list:
             if hasattr(component, 'targets'):
-                component.targets = self.compile_note_targets(parsed_result)
+                component.targets = self.compile_components(
+                    parsed_result.target_list,
+                    self.elements
+                )
             else:
                 self.logger.warning(Parser.invalid_modification_warning(
                     component.name, parsed_result, 'targets', 'Note'))
@@ -602,13 +603,9 @@ class Parser:
 
         action = get_property(parsed_result.action, Action)
         sources = self.compile_components(parsed_result.source_list, self.elements)
-        if action in (Action.PROCESS, Action.STORE):
-            targets = sources
-        else:
-            targets = self.compile_components(parsed_result.target_list, self.elements)
+        targets = self.compile_components(parsed_result.target_list, self.elements)
 
-        if ((action in (Action.SEND, Action.RECEIVE))
-        and not (sources and targets)):
+        if not sources and not targets:
             # A warning will already have been issued by compile_components()
             return
 
@@ -636,7 +633,7 @@ class Parser:
         return (affected_interactions, affected_data)
 
     def apply_measures(self, affected_interactions, affected_data, parsed_result):
-        measures = self.compile_components([parsed_result.name], self.measures)
+        measures = self.compile_components(parsed_result.name_list, self.measures)
         imperative, status = Parser.get_mitigation_properties(parsed_result)
         for i in affected_interactions:
             for d_name in [n for n in i.data if n in affected_data]:
@@ -649,7 +646,8 @@ class Parser:
         self.active_measures |= deepcopy(measures)
 
     def apply_threats(self, affected_interactions, affected_data, parsed_result):
-        threats = self.compile_components([parsed_result.name], self.threats)
+        # TODO verify that name_list works here, and for apply_measures above
+        threats = self.compile_components(parsed_result.name_list, self.threats)
         for i in affected_interactions:
             for d_name in [n for n in i.data if n in affected_data]:
                 risks = {
@@ -660,11 +658,8 @@ class Parser:
         # deepcopy() to allow applicable_measures to be modified for active threats.
         self.active_threats |= deepcopy(threats)
 
-    def compile_element_pairs(self, element_list, element_pair_list):
+    def compile_element_pairs(self, element_pair_list):
         pairs = set()
-        for name in self.compile_components(element_list, self.active_elements):
-            pairs.add((name, name))  # because the target is itself.
-
         for name_pair in element_pair_list:
             name1, name2 = name_pair
             element_names = chain(
@@ -675,19 +670,16 @@ class Parser:
         return pairs
 
     def affected_element_pairs(self, parsed_result):
-        if parsed_result.element_list or parsed_result.element_pair_list:
+        if parsed_result.element_pair_list:
             affected_pairs = self.compile_element_pairs(
-                parsed_result.element_list,
                 parsed_result.element_pair_list
             )
         else:
             affected_pairs = self.compile_element_pairs(
-                self.active_elements.keys(),
                 ((n1, n2) for n1, n2 in combinations(self.active_elements, 2)),
             )
-            if parsed_result.element_exceptions or parsed_result.element_pair_exceptions:
+            if parsed_result.element_pair_exceptions:
                 affected_pairs -= self.compile_element_pairs(
-                    parsed_result.element_exceptions,
                     parsed_result.element_pair_exceptions
                 )
         return affected_pairs
@@ -700,7 +692,7 @@ class Parser:
             if data_exceptions:
                 exempt_data = self.compile_components(data_exceptions, self.active_data)
                 affected_data = {
-                    name: datum for name, datum in self.active_data
+                    name: datum for name, datum in self.active_data.items()
                     if name not in exempt_data
                 }
         return affected_data
@@ -726,16 +718,15 @@ class Parser:
                 status = Status.VERIFIED
         return (imperative, status)
 
-    def structure_notes(self):
+    # Recalculate note parents because clusters and elements
+    # may be assigned new parents via the modification directive.
+    def reparent_notes(self):
         for note in self.notes.values():
-            note.targets = {
-                self.elements[t].name: self.elements[t]
-                for t in note.targets if t in self.elements
-            }
             if note.parent:
                 note.parent = Parser.find_cluster(note.parent, self.clusters)
             elif note.targets:
-                note.parent = max(e.parent for e in note.targets.values())
+                parents = [e.parent for e in note.targets.values() if e.parent is not None]
+                note.parent = max(parents) if parents else None
             else:
                 note.parent = None
 

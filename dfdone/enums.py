@@ -25,10 +25,8 @@ class Profile(Enum):
 
 @unique
 class Action(Enum):
-    PROCESS = 'process'
     RECEIVE = 'receive'
     SEND    = 'send'
-    STORE   = 'store'
 
 
 @unique

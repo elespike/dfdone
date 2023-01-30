@@ -137,8 +137,11 @@ class Threat(Component):
         super().__init__(name, label, description)
         self.impact = impact
         self.probability = probability
-        self.potential_risk = Risk.MATRIX[impact + probability]
         self.applicable_measures = dict()  # of measure names to measure instances
+
+    @property
+    def potential_risk(self):
+        return Risk.MATRIX[self.impact + self.probability]
 
     def __eq__(self, other):
         if not isinstance(other, Threat):
@@ -209,18 +212,12 @@ class Interaction:
 
     def __str__(self):
         source_labels = F"{', '.join(s.label for s in self.sources.values())}"
-        if self.action in (Action.PROCESS, Action.STORE):
-            action_name = self.action.name.lower()
-            if len(self.sources) == 1:
-                action_name += '(s)' if self.action is Action.STORE else '(es)'
-            return F"{source_labels} {action_name}"
-        else:
-            target_labels = F"{', '.join(s.label for s in self.targets.values())}"
-            if self.action is Action.RECEIVE:
-                direction = '<'
-            if self.action is Action.SEND:
-                direction = '>'
-            return F"{source_labels} {direction} {target_labels}"
+        target_labels = F"{', '.join(s.label for s in self.targets.values())}"
+        if self.action is Action.RECEIVE:
+            direction = '\u2190'
+        if self.action is Action.SEND:
+            direction = '\u2192'
+        return F"{source_labels} {direction} {target_labels}"
 
     # TODO unnecessary?
     # @property
@@ -240,6 +237,12 @@ class Interaction:
         return all(
             risk_name in risk_dict
             for risk_dict in self.risks.values()
+        )
+
+    def entirely_mitigated_by(self, mitigation_name):
+        return all(
+            mitigation_name in mitigation_dict
+            for mitigation_dict in self.mitigations.values()
         )
 
 

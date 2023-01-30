@@ -47,12 +47,9 @@ FROM         = CaselessKeyword('from'        )
 IN           = CaselessKeyword('in'          )
 INCLUDE      = CaselessKeyword('include'     )
 TO           = CaselessKeyword('to'          )
-WITHIN       = CaselessKeyword('within'      )
 
-PROCESS = Regex('(process)(es)?', IGNORECASE).sub('\g<1>').set_results_name('action')
-SEND    = Regex('(send)(s?)'    , IGNORECASE).sub('\g<1>').set_results_name('action')
-STORE   = Regex('(store)(s?)'   , IGNORECASE).sub('\g<1>').set_results_name('action')
 RECEIVE = Regex('(receive)(s?)' , IGNORECASE).sub('\g<1>').set_results_name('action')
+SEND    = Regex('(send)(s?)'    , IGNORECASE).sub('\g<1>').set_results_name('action')
 
 APPLIES = (Or(CaselessKeyword(w) for w in [
     'applies',
@@ -211,8 +208,6 @@ NOTES       = QuotedString('"', esc_quote='""', multiline=True).set_results_name
 ALIASES            = delimited_list(Group(NAME), delim=DELIMITERS, allow_trailing_delim=True).set_results_name('aliases'           )
 DATA_EXCEPTIONS    = delimited_list(Group(NAME), delim=DELIMITERS, allow_trailing_delim=True).set_results_name('data_exceptions'   )
 DATA_LIST          = delimited_list(Group(NAME), delim=DELIMITERS, allow_trailing_delim=True).set_results_name('data_list'         )
-ELEMENT_EXCEPTIONS = delimited_list(Group(NAME), delim=DELIMITERS, allow_trailing_delim=True).set_results_name('element_exceptions')
-ELEMENT_LIST       = delimited_list(Group(NAME), delim=DELIMITERS, allow_trailing_delim=True).set_results_name('element_list'      )
 NAME_LIST          = delimited_list(Group(NAME), delim=DELIMITERS, allow_trailing_delim=True).set_results_name('name_list'         )
 SOURCE_LIST        = delimited_list(Group(NAME), delim=DELIMITERS, allow_trailing_delim=True).set_results_name('source_list'       )
 TARGET_LIST        = delimited_list(Group(NAME), delim=DELIMITERS, allow_trailing_delim=True).set_results_name('target_list'       )
@@ -234,18 +229,9 @@ BETWEEN_ELEMENTS = BETWEEN + (
     ELEMENT_PAIR_LIST
     ^ (ALL_ELEMENTS + Opt(EXCEPT + ELEMENT_PAIR_EXCEPTIONS))
 )
-WITHIN_ELEMENTS = WITHIN + (
-    ELEMENT_LIST
-    ^ (ALL_ELEMENTS + Opt(EXCEPT + ELEMENT_EXCEPTIONS))
-)
-AFFECTED_INTERACTIONS = MatchFirst([
-    BETWEEN_ELEMENTS + Opt(AND) + WITHIN_ELEMENTS,
-    WITHIN_ELEMENTS + Opt(AND) + BETWEEN_ELEMENTS,
-    BETWEEN_ELEMENTS ^ WITHIN_ELEMENTS,
-])
 AFFECTED_COMPONENTS = MatchFirst([
-    AFFECTED_DATA + AFFECTED_INTERACTIONS,
-    AFFECTED_DATA ^ AFFECTED_INTERACTIONS,
+    AFFECTED_DATA + BETWEEN_ELEMENTS,
+    AFFECTED_DATA ^ BETWEEN_ELEMENTS,
 ])
 
 def all_combinations(expression_list):
@@ -259,6 +245,7 @@ LABEL_AND_OR_DESCRIPTION = MatchFirst([
     (LABELED + LABEL) ^ (DESCRIBED_AS + DESCRIPTION),
 ])
 
+# TODO a "skip" directive for better overwrites (e.g., a main.tml that uses entities instead of clusters)
 # TODO rename construct to directive
 # TODO review tests after grammar changes
 # The ordering of the 'directives' list matters!
@@ -268,15 +255,15 @@ directives = [
     INCLUDE + PATH,
     # Alias for one or more components
     ALIAS_DIRECTIVE,
-    # Diagram note
-    NAME_LIST + IS_A + Opt(COLOR) + NOTE + Opt(IN + PARENT) + Opt(ATTACHED_TO + TARGET_LIST)
-    + Opt(AND) + Opt(LABEL_AND_OR_DESCRIPTION),
     # Cluster
     NAME_LIST + IS_A + CLUSTER + Opt(IN + PARENT)
     + Opt(LABEL_AND_OR_DESCRIPTION),
     # Element
     NAME_LIST + IS_A + PROFILE + ROLE + Opt(IN + PARENT)
     + Opt(LABEL_AND_OR_DESCRIPTION),
+    # Diagram note
+    NAME_LIST + IS_A + Opt(COLOR) + NOTE + Opt(IN + PARENT) + Opt(ATTACHED_TO + TARGET_LIST)
+    + Opt(AND) + Opt(LABEL_AND_OR_DESCRIPTION),
     # Datum
     NAME_LIST + IS_A + CLASSIFICATION + DATUM
     + Opt(LABEL_AND_OR_DESCRIPTION),
@@ -305,16 +292,16 @@ directives = [
     ]),
     # Interaction
     Opt(ORDINAL) + SOURCE_LIST + Or([
-        (PROCESS ^ STORE) + DATA_LIST,
-        SEND + DATA_LIST + TO + TARGET_LIST,
         RECEIVE + DATA_LIST + FROM + TARGET_LIST,
+        SEND + DATA_LIST + TO + TARGET_LIST,
     ])
     + Opt(Opt(DELIMITERS) + WITH_NOTES + NOTES),
     # Mitigation (before risk to allow precalculation of risk rating)
-    NAME + (IMPERATIVE ^ HAS) + BE + (IMPLEMENTED ^ VERIFIED) + AFFECTED_COMPONENTS,
+    # TODO verify that NAME_LIST works for risks and mitigations
+    NAME_LIST + (IMPERATIVE ^ HAS) + BE + (IMPLEMENTED ^ VERIFIED) + AFFECTED_COMPONENTS,
     # TODO grammar tests for risk
     # Risk
-    NAME + APPLIES + AFFECTED_COMPONENTS,
+    NAME_LIST + APPLIES + AFFECTED_COMPONENTS,
 ]
 
 # This allows commenting out lines in the threat model file.
@@ -323,9 +310,9 @@ directives = [line_start + c + Opt('.') for c in list(directives)]
 directive_keys = [
     'inclusion'   ,
     'alias'       ,
-    'note'        ,
     'cluster'     ,
     'element'     ,
+    'note'        ,
     'datum'       ,
     'threat'      ,
     'measure'     ,
